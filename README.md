@@ -1,4 +1,4 @@
-# ColdSense 🧊
+# ColdSense 
 
 **AI-powered cold-storage spoilage prediction dashboard** — Technova 2026 Hackathon Demo
 
