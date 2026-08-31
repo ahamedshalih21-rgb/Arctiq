@@ -1,11 +1,15 @@
-# ColdSense 
-**AI-powered cold-storage spoilage prediction dashboard** — Technova 2026 Hackathon Demo
+# ColdSense
+**AI-powered cold-storage monitoring and recovery exchange dashboard** — Technova 2026 Hackathon Demo
 
 ---
 
 ## Problem Statement
 
-Cold-storage facilities worldwide lose 15–35% of fresh produce to undetected spoilage events — cooling faults, door-left-open scenarios, and humidity spikes that go unnoticed until it's too late. **ColdSense** demonstrates how a lightweight AI system, reading inexpensive IoT sensors, can predict hours-until-spoilage risk per produce batch in real time — giving operators a window to intervene before loss occurs. In a simulated demo, ColdSense predicts across three produce types (leafy greens, tomatoes, potatoes) with a pre-trained Gradient Boosting model achieving **~6.4-hour MAE**, and visualises the Safe → Watch → Critical progression live on a polished React dashboard.
+Cold-storage facilities worldwide lose 15–35% of fresh produce to undetected spoilage events — cooling faults, door-left-open scenarios, and humidity spikes that go unnoticed until it's too late. **ColdSense** demonstrates how a lightweight AI system, reading inexpensive IoT sensors, can:
+
+1. **Predict hours-until-spoilage risk** per produce batch in real time using a Gradient Boosting Regressor.
+2. **Monitor compressor health** using a simulation-based Arrhenius-degradation model.
+3. **Create recovery listings** automatically when a batch approaches spoilage — connecting vendors to nearby buyers to recover economic value that would otherwise be lost.
 
 ---
 
@@ -17,37 +21,131 @@ Synthetic Data          Pre-trained Model         Live Backend          React Fr
 generate.py      →      train.py (GBR)     →      FastAPI :8000   →     Vite :5173
  6,000 sequences         saved .joblib              /api/readings         SensorChart
  144,000 rows            norm_params.json           /api/prediction       RiskBadge
- 3 produce types         MAE ≈ 6.4 hrs             /api/trigger-fault    FaultControl
-                                                    Simulator thread      ValueMetric
+ 3 produce types         MAE ≈ 6.4 hrs             /api/compressor       FaultControl
+                                               /api/recovery/listings    CompressorHealth
+                                               /api/recovery/buyers      RecoveryExchange
 ```
 
 ```
 coldsense/
-├── data_generator/generate.py      # Synthetic training data
+├── data_generator/generate.py          # Synthetic training data
 ├── model/
-│   ├── train.py                    # GBR training + evaluation
-│   ├── data/training_data.csv      # Generated dataset (144k rows)
-│   ├── saved_model/                # coldsense_model.joblib + norm_params.json
-│   └── plots/                      # loss_curve.png, sample_predictions.png
+│   ├── train.py                        # GBR training + evaluation
+│   ├── data/training_data.csv          # Generated dataset (144k rows)
+│   ├── saved_model/                    # coldsense_model.joblib + norm_params.json
+│   └── plots/
 ├── backend/
-│   ├── main.py                     # FastAPI app
-│   ├── simulator.py                # Live sensor stream
-│   ├── predictor.py                # Model inference
+│   ├── main.py                         # FastAPI app + all endpoints
+│   ├── simulator.py                    # Live sensor stream (cold storage)
+│   ├── predictor.py                    # GBR model inference
+│   ├── compressor_simulator.py         # Arrhenius-based compressor health model
+│   ├── recovery_exchange.py            # Risk Stock / Recovery Exchange service
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx                 # Main dashboard
-│   │   ├── index.css               # Dark glassmorphism design
+│   │   ├── App.jsx                     # Main dashboard
+│   │   ├── index.css                   # Industrial HMI design system
 │   │   └── components/
-│   │       ├── SensorChart.jsx     # Recharts dual-axis trend
-│   │       ├── RiskBadge.jsx       # Safe/Watch/Critical indicator
-│   │       ├── ValueMetric.jsx     # Value-preserved card
-│   │       ├── BatchCard.jsx       # Batch metadata
-│   │       └── FaultControl.jsx    # Demo fault trigger panel
+│   │       ├── SensorChart.jsx         # Recharts dual-axis trend
+│   │       ├── RiskBadge.jsx           # Safe/Watch/Critical indicator
+│   │       ├── ValueMetric.jsx         # Value-preserved card
+│   │       ├── BatchCard.jsx           # Batch metadata
+│   │       ├── FaultControl.jsx        # Demo fault trigger panel
+│   │       ├── CompressorHealth.jsx    # Compressor health monitoring card
+│   │       └── RecoveryExchange.jsx    # Risk Stock / buyer interest module
 │   ├── vite.config.js
 │   └── package.json
 └── README.md
 ```
+
+---
+
+## Currently Implemented
+
+### Spoilage Prediction
+1. **Gradient Boosting Regressor (GBR)** — active spoilage prediction model (scikit-learn)
+2. Simulated sensor/environmental data for three produce types
+3. Temperature monitoring (per produce batch)
+4. Humidity monitoring (per produce batch)
+5. Door event simulation and monitoring
+6. Live/simulated dashboard updates (4-second polling)
+7. Spoilage risk classification: Safe / Watch / Critical
+
+### Compressor Health Monitoring
+8. Simulation-based compressor health monitoring subsystem
+9. Compressor temperature simulation (mean-reverting, demand-influenced)
+10. Compressor current simulation (on/off state × duty cycle)
+11. Duty cycle monitoring (exponential moving average of on-time)
+12. Runtime accumulation (continuous compressor-on time tracking)
+13. Start-stop cycle tracking with hysteresis (no double-counting)
+14. **Arrhenius-based temperature-dependent degradation** — see model note below
+15. Cumulative degradation calculation (4-contributor model)
+16. Compressor Health Score (0–100, derived from cumulative degradation)
+17. Health status classification: Healthy / Warning / Critical
+18. Demo mode: accelerated degradation for presentations
+
+### Risk Stock / Recovery Exchange
+19. Automatic Risk Stock listing creation when GBR predicts Watch or Critical risk
+20. Listing deduplication — updates existing listing rather than creating duplicates
+21. Recovery Exchange prototype workflow (Active → Interested → Reserved → Sold)
+22. Prototype recovery price heuristic (produce-specific INR pricing)
+23. Simulated nearby buyers (5 buyer types: Juice Stall, Canteen, Animal Feed Vendor, etc.)
+24. Buyer interest state machine (Pending → Interested / Not Interested → Reserved → Sold)
+25. Buyer interest simulation (produce-preference-weighted probability)
+26. Listing status management API
+27. Buyer interest status API
+
+---
+
+## Future Hardware Integration
+
+ColdSense is currently fully simulation-based. The path to real hardware integration is straightforward:
+
+| Component | Purpose | Part |
+|---|---|---|
+| Temperature + Humidity | Primary spoilage sensor | **DHT22** or **SHT31** |
+| Precise temperature | Produce core temperature | **DS18B20** (waterproof probe) |
+| Door open detection | Cold-air loss event | **Magnetic reed switch** |
+| Compressor current | Compressor health monitoring | **ACS712** current sensor |
+| Edge compute + WiFi | Sensor hub + MQTT/HTTP | **ESP32** microcontroller |
+| Relay/control interface | Future compressor control | Relay module (future scope) |
+
+Replace `simulator.py`'s `_loop()` with an MQTT subscriber or HTTP polling loop reading from the ESP32. Replace `compressor_simulator.py`'s `_loop()` with ACS712 + DS18B20 readings. The rest of the backend and frontend are hardware-agnostic.
+
+---
+
+## Model Accuracy Note
+
+| Property | Value |
+|---|---|
+| Spoilage model | GradientBoostingRegressor (scikit-learn) |
+| Input | 24-hour rolling window × [temp, humidity, door_event, produce_type] |
+| Output | `hours_until_spoilage_risk` (regression) |
+| Training data | 6,000 sequences × 24 timesteps = 144,000 rows (synthetic) |
+| Validation MAE | ~6.4 hours |
+| Risk thresholds | Safe > 48h, Watch > 24h, Critical ≤ 24h |
+
+> **LSTM / deep learning note:** LSTM-based time-series approaches may be explored in future with larger real-world datasets. The currently active production model is the Gradient Boosting Regressor.
+
+### Compressor Degradation Model Note
+
+The compressor health model uses an **Arrhenius-based temperature stress factor**:
+
+```
+k(T) = A × exp(−Ea / (R × T))
+temperature_stress_factor = k(T) / k(T_reference)
+temperature_damage = BASE_RATE × temperature_stress_factor × delta_time
+```
+
+**Parameters are prototype simulation values. This is NOT manufacturer-calibrated compressor lifetime prediction.** The model is designed to demonstrate temperature-dependent degradation behaviour in a simulation context. It is not suitable for real predictive maintenance decisions without calibration against actual compressor failure data.
+
+### Recovery Exchange Pricing Note
+
+Recovery prices are calculated using a prototype heuristic:
+```
+recovery_price = batch_value × clip(remaining_hours / reference_window, 0.10, 0.80)
+```
+This is **not a validated market pricing algorithm**. Prices are illustrative only.
 
 ---
 
@@ -64,7 +162,7 @@ cd coldsense/backend
 pip install fastapi "uvicorn[standard]" numpy scikit-learn joblib matplotlib pandas
 ```
 
-### Step 2 — Generate training data (one-time)
+### Step 2 — Generate training data (one-time, if not already present)
 
 ```bash
 cd coldsense
@@ -72,16 +170,15 @@ python data_generator/generate.py
 # → creates model/data/training_data.csv (144,000 rows)
 ```
 
-### Step 3 — Train the model (one-time)
+### Step 3 — Train the model (one-time, if not already trained)
 
 ```bash
 python model/train.py
 # → saves model/saved_model/coldsense_model.joblib
-# → saves model/plots/sample_predictions.png
 # → prints validation MAE (~6.4 hours)
 ```
 
-> **Note:** TensorFlow is optional. The training script automatically falls back to a `GradientBoostingRegressor` if TF is unavailable. The backend/frontend work identically either way.
+> **Note:** TensorFlow is optional. The training script automatically falls back to GradientBoostingRegressor if TF is unavailable. The pre-trained GBR model is already included in `model/saved_model/`.
 
 ### Step 4 — Start the backend
 
@@ -105,71 +202,46 @@ powershell -ExecutionPolicy Bypass -Command "npm run dev"
 
 ## API Reference
 
+### Existing Endpoints (unchanged)
+
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/health` | System health check |
 | GET | `/api/readings` | Live sensor readings (all batches) |
 | GET | `/api/readings/{produce_type}` | Reading for one batch |
 | GET | `/api/history/{produce_type}?n=30` | Last N readings for trend chart |
-| GET | `/api/prediction` | Model prediction for all batches |
+| GET | `/api/prediction` | GBR spoilage prediction for all batches |
 | GET | `/api/prediction/{produce_type}` | Prediction for one batch |
 | GET | `/api/value` | Value/loss-prevented metric |
-| POST | `/api/trigger-fault` | **Inject cooling fault (demo control)** |
+| POST | `/api/trigger-fault` | Inject cooling fault (demo control) |
 | POST | `/api/reset-fault` | Reset fault state |
 
-**Trigger fault example:**
-```bash
-curl -X POST http://localhost:8000/api/trigger-fault \
-  -H "Content-Type: application/json" \
-  -d '{"produce_type": "leafy_greens", "speed": 5}'
-```
+### New Endpoints
 
-- `produce_type`: `"leafy_greens"` / `"tomatoes"` / `"potatoes"` / `null` (all)
-- `speed`: drift multiplier `1`–`20` (5 = 5× faster than real-time)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/compressor` | Compressor health snapshot (Arrhenius model) |
+| GET | `/api/recovery/listings` | Active Risk Stock listings |
+| GET | `/api/recovery/listings/all` | All listings including SOLD/EXPIRED |
+| GET | `/api/recovery/buyers` | Simulated nearby buyer dataset |
+| GET | `/api/recovery/listings/{batch_id}/buyers` | Buyer interest for a listing |
+| POST | `/api/recovery/listings/{batch_id}/interest?buyer_id=B001` | Simulate buyer interest |
+| POST | `/api/recovery/listings/{batch_id}/status` | Update listing status |
 
 ---
 
 ## Demo Recording Guide
 
 1. Start backend + frontend as above
-2. Allow 10–15 seconds for initial stable readings to appear
+2. Allow 10–15 seconds for initial stable readings
 3. Select **Leafy Greens** tab (fastest spoiler, most dramatic)
-4. In the **Demo Control** panel (bottom-right):
+4. In the **Demo Control** panel:
    - Set speed to **5×**
-   - Click **⚡ Trigger Cooling Fault**
-5. Watch temperature drift up, risk transition Safe → Watch → Critical within ~60–90 seconds
-6. Repeat for Tomatoes/Potatoes as time allows
-7. Use **↺ Reset Fault** to return to stable for a clean before/after
-
----
-
-## Model Details
-
-| Property | Value |
-|---|---|
-| Model type | GradientBoostingRegressor (scikit-learn) |
-| Input | 24-hour rolling window × [temp, humidity, door_event, produce_type] |
-| Output | `hours_until_spoilage_risk` (regression) |
-| Training data | 6,000 sequences × 24 timesteps = 144,000 rows (synthetic) |
-| Validation MAE | ~6.4 hours |
-| Risk thresholds | Safe > 48h, Watch > 24h, Critical ≤ 24h |
-| Training time | ~25 seconds (CPU) |
-
----
-
-## Path to Real IoT Hardware
-
-ColdSense is currently fully simulation-based. The path to real hardware integration is straightforward:
-
-| Component | Purpose | Part |
-|---|---|---|
-| Temperature + Humidity | Primary spoilage sensor | **DHT22** or **SHT31** |
-| Precise temperature | Produce core temp | **DS18B20** (waterproof probe) |
-| Door open detection | Cold-air loss event | **Magnetic reed switch** |
-| Compressor health | Cooling system fault | **ACS712** current sensor |
-| Edge compute + WiFi | Sensor hub + MQTT/HTTP | **ESP32** microcontroller |
-
-Replace `simulator.py`'s `_loop()` with an MQTT subscriber or HTTP polling loop reading from the ESP32. The rest of the backend and frontend are hardware-agnostic.
+   - Click **Trigger Fault**
+5. Watch temperature drift, risk transition Safe → Watch → Critical within ~60–90 seconds
+6. Watch **Risk Stock** listing appear automatically as risk escalates
+7. Watch **Compressor Health Score** decrease (DEMO_MODE = True in `compressor_simulator.py`)
+8. Use **Reset Fault** to return to stable for a clean before/after
 
 ---
 
@@ -177,10 +249,10 @@ Replace `simulator.py`'s `_loop()` with an MQTT subscriber or HTTP polling loop 
 
 | Produce | Ideal Temp | Ideal Humidity | Base Shelf Life | Main Risk |
 |---|---|---|---|---|
-| 🥬 Leafy Greens | 3°C | 92% | 72 hours | Heat (fast spoiler) |
-| 🍅 Tomatoes | 13°C | 87% | 120 hours | Heat + humidity |
-| 🥔 Potatoes | 7°C | 87% | 240 hours | Humidity (hardy) |
+| Leafy Greens | 3°C | 92% | 72 hours | Heat (fast spoiler) |
+| Tomatoes | 13°C | 87% | 120 hours | Heat + humidity |
+| Potatoes | 7°C | 87% | 240 hours | Humidity (hardy) |
 
 ---
 
-*Built for Technova 2026 · All sensor data is simulated · No real hardware required*
+*Built for Technova 2026 · All sensor data is simulated · No real hardware or external APIs required*

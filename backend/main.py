@@ -12,6 +12,8 @@ import logging
 
 from simulator import simulator, PRODUCE_CONFIGS
 from predictor import predictor
+from compressor_simulator import compressor_sim
+from recovery_exchange import recovery_exchange
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("coldsense")
@@ -20,7 +22,7 @@ logger = logging.getLogger("coldsense")
 app = FastAPI(
     title="ColdSense API",
     description="Cold-storage spoilage prediction backend",
-    version="1.0.0",
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -46,10 +48,20 @@ async def startup_event():
     simulator.start()
     logger.info("Simulator running.")
 
+    logger.info("Starting compressor simulator...")
+    compressor_sim.start()
+    logger.info("Compressor simulator running.")
+
+    logger.info("Starting recovery exchange service...")
+    recovery_exchange.start()
+    logger.info("Recovery exchange running.")
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
     simulator.stop()
+    compressor_sim.stop()
+    recovery_exchange.stop()
 
 
 # ── Models ─────────────────────────────────────────────────────────────────────
@@ -60,6 +72,10 @@ class FaultTriggerRequest(BaseModel):
 
 class FaultResetRequest(BaseModel):
     produce_type: Optional[str] = None
+
+
+class ListingStatusRequest(BaseModel):
+    new_status: str   # ACTIVE | INTERESTED | RESERVED | SOLD | EXPIRED
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -92,7 +108,45 @@ def build_prediction_for(produce_type: str) -> dict:
     }
 
 
-# ── Endpoints ──────────────────────────────────────────────────────────────────
+def _sync_compressor_context():
+    """
+    Update compressor simulator with current cold-storage context.
+    Called after reading the latest simulator state so the compressor
+    simulation reflects real-time conditions.
+    """
+    readings = simulator.get_readings()
+    any_fault = any(r.get("fault_active", False) for r in readings.values())
+    # Compute average storage temperature across all batches
+    temps = [r.get("temperature", 5.0) for r in readings.values() if r]
+    avg_temp = sum(temps) / len(temps) if temps else 5.0
+    compressor_sim.update_context(any_fault=any_fault, avg_storage_temp=avg_temp)
+
+
+def _sync_recovery_exchange():
+    """
+    Process current predictions through the recovery exchange.
+    Creates or updates Risk Stock listings based on GBR output.
+    Called on each prediction poll so listings stay current.
+    """
+    if not predictor._loaded:
+        return
+    meta_all = simulator.get_metadata()
+    for pt in VALID_PRODUCE:
+        pred = build_prediction_for(pt)
+        if not pred:
+            continue
+        meta = meta_all.get(pt, {})
+        recovery_exchange.process_prediction(
+            batch_id=meta.get("batch_id", pt),
+            produce_type=pt,
+            display_name=meta.get("display_name", pt),
+            risk_level=pred.get("risk_level", "Safe"),
+            remaining_hours=pred.get("hours_remaining", 999.0),
+            batch_weight_kg=meta.get("batch_weight_kg", 100.0),
+        )
+
+
+# ── Existing Endpoints (unchanged) ─────────────────────────────────────────────
 
 @app.get("/health")
 def health():
@@ -101,6 +155,7 @@ def health():
         "model_loaded": predictor._loaded,
         "model_type": predictor.model_type,
         "simulator_running": simulator._running,
+        "compressor_running": compressor_sim._running,
         "timestamp": time.time(),
     }
 
@@ -108,6 +163,7 @@ def health():
 @app.get("/api/readings")
 def get_readings():
     """Latest sensor readings for all produce batches."""
+    _sync_compressor_context()
     readings = simulator.get_readings()
     meta = simulator.get_metadata()
     result = {}
@@ -149,6 +205,7 @@ def get_all_predictions():
     result = {}
     for pt in VALID_PRODUCE:
         result[pt] = build_prediction_for(pt)
+    _sync_recovery_exchange()
     return result
 
 
@@ -247,6 +304,88 @@ def get_status():
             "value": pred.get("value", {}),
         }
     return result
+
+
+# ── New Endpoints: Compressor Health ───────────────────────────────────────────
+
+@app.get("/api/compressor")
+def get_compressor_health():
+    """
+    Current compressor health data derived from simulation-based
+    Arrhenius temperature-dependent degradation model.
+
+    All values are simulation-based. Parameters are prototype values only.
+    Not manufacturer-calibrated.
+    """
+    _sync_compressor_context()
+    return compressor_sim.get_status()
+
+
+# ── New Endpoints: Risk Stock / Recovery Exchange ──────────────────────────────
+
+@app.get("/api/recovery/listings")
+def get_recovery_listings():
+    """
+    Active Risk Stock listings.
+    Listings are auto-created when GBR predicts WATCH or CRITICAL risk levels.
+    """
+    _sync_recovery_exchange()
+    listings = recovery_exchange.get_active_listings()
+    return {
+        "count": len(listings),
+        "listings": listings,
+    }
+
+
+@app.get("/api/recovery/listings/all")
+def get_all_recovery_listings():
+    """All listings including SOLD and EXPIRED (for audit/history)."""
+    return {
+        "listings": recovery_exchange.get_all_listings(),
+    }
+
+
+@app.get("/api/recovery/buyers")
+def get_nearby_buyers():
+    """Simulated nearby buyers dataset."""
+    return {
+        "buyers": recovery_exchange.get_all_buyers(),
+        "note": "Prototype simulation — buyers are simulated. No real external APIs used.",
+    }
+
+
+@app.get("/api/recovery/listings/{batch_id}/buyers")
+def get_listing_buyers(batch_id: str):
+    """Buyers and their current interest status for a specific listing."""
+    buyers = recovery_exchange.get_buyers_for_listing(batch_id)
+    return {
+        "batch_id": batch_id,
+        "buyers": buyers,
+    }
+
+
+@app.post("/api/recovery/listings/{batch_id}/interest")
+def simulate_buyer_interest(batch_id: str, buyer_id: str = Query(...)):
+    """Manually simulate buyer interest for a specific buyer/listing pair."""
+    result = recovery_exchange.simulate_buyer_interest(batch_id, buyer_id)
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Listing '{batch_id}' or buyer '{buyer_id}' not found."
+        )
+    return {"batch_id": batch_id, "buyer": result}
+
+
+@app.post("/api/recovery/listings/{batch_id}/status")
+def update_listing_status(batch_id: str, body: ListingStatusRequest):
+    """Update the status of a Risk Stock listing (e.g. mark RESERVED or SOLD)."""
+    success = recovery_exchange.update_listing_status(batch_id, body.new_status)
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Listing '{batch_id}' not found or invalid status '{body.new_status}'."
+        )
+    return {"batch_id": batch_id, "new_status": body.new_status}
 
 
 if __name__ == "__main__":

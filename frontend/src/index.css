@@ -918,3 +918,40 @@ body {
   border-radius: 50%;
   flex-shrink: 0;
 }
+
+/* ── Recovery Exchange Table ────────────────────────────────────────────────── */
+/* Compact HMI-style data table, consistent with existing card/row patterns.    */
+.re-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+}
+
+.re-table th {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--color-neutral-600);
+  padding: var(--space-2) var(--space-6);
+  border-bottom: 1px solid var(--color-divider);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.re-table td {
+  font-size: 0.68rem;
+  color: var(--color-neutral-400);
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--color-divider);
+  white-space: nowrap;
+}
+
+.re-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.re-table tbody tr:hover td {
+  background: rgba(79, 182, 201, 0.04);
+}
+
