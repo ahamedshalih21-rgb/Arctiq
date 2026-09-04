@@ -1,17 +1,18 @@
 import React from 'react';
 
 /**
- * CompressorHealth
- * ----------------
- * Displays compressor health data derived from the simulation-based
- * Arrhenius degradation model. Matches existing HMI card style.
+ * CompressorHealth — Simplified
+ * --------------------------------
+ * Displays only the three required fields:
+ *   Health Score | Status | Run Time
  *
- * Layout: reuses .hmi-card, .bi-row, .bi-label, .bi-value, .risk-badge CSS.
- * No new visual language introduced.
+ * Per UI requirements, all other compressor metrics (temperature, current,
+ * duty cycle, Arrhenius factor, cumulative damage, start-stop cycles) have
+ * been removed from this view. They remain available via /api/compressor.
  */
 
 function statusClass(status) {
-  if (!status) return 'Safe';
+  if (!status)             return 'Safe';
   if (status === 'Healthy')  return 'Safe';
   if (status === 'Warning')  return 'Watch';
   if (status === 'Critical') return 'Critical';
@@ -34,19 +35,14 @@ export default function CompressorHealth({ data }) {
   }
 
   const {
-    health_score          = null,
-    health_status         = '--',
-    compressor_temperature = null,
-    compressor_current    = null,
-    duty_cycle            = null,
-    arrhenius_stress_factor = null,
-    cumulative_damage     = null,
-    runtime_hours         = null,
-    start_stop_cycles     = null,
-    demo_mode             = false,
+    health_score   = null,
+    health_status  = '--',
+    runtime_hours  = null,
+    demo_mode      = false,
   } = data;
 
-  const sc = statusClass(health_status);
+  const sc          = statusClass(health_status);
+  const scoreColor  = sc === 'Safe' ? 'var(--risk-safe)' : sc === 'Watch' ? 'var(--risk-watch)' : 'var(--risk-critical)';
 
   return (
     <div className="hmi-card">
@@ -54,11 +50,10 @@ export default function CompressorHealth({ data }) {
 
       <div className="bi-table">
 
-        {/* Health Score + Status */}
         <div className="bi-row">
           <span className="bi-label">Health Score</span>
           <span className="bi-value">
-            <span style={{ color: sc === 'Safe' ? 'var(--risk-safe)' : sc === 'Watch' ? 'var(--risk-watch)' : 'var(--risk-critical)' }}>
+            <span style={{ color: scoreColor }}>
               {health_score !== null ? health_score.toFixed(1) : '--'}
             </span>
             <span style={{ color: 'var(--color-neutral-600)', fontWeight: 400, marginLeft: 2 }}> / 100</span>
@@ -78,70 +73,16 @@ export default function CompressorHealth({ data }) {
           </span>
         </div>
 
-        {/* Temperature */}
-        <div className="bi-row">
-          <span className="bi-label">Comp. Temp</span>
-          <span className="bi-value">
-            {compressor_temperature !== null ? compressor_temperature.toFixed(1) : '--'}
-            <span style={{ color: 'var(--color-neutral-600)', fontWeight: 400 }}> °C</span>
-          </span>
-        </div>
-
-        {/* Current */}
-        <div className="bi-row">
-          <span className="bi-label">Current</span>
-          <span className="bi-value">
-            {compressor_current !== null ? compressor_current.toFixed(2) : '--'}
-            <span style={{ color: 'var(--color-neutral-600)', fontWeight: 400 }}> A</span>
-          </span>
-        </div>
-
-        {/* Duty Cycle */}
-        <div className="bi-row">
-          <span className="bi-label">Duty Cycle</span>
-          <span className="bi-value">
-            {duty_cycle !== null ? duty_cycle.toFixed(1) : '--'}
-            <span style={{ color: 'var(--color-neutral-600)', fontWeight: 400 }}> %</span>
-          </span>
-        </div>
-
-        {/* Arrhenius Stress Factor */}
-        <div className="bi-row">
-          <span className="bi-label">Arrhenius Factor</span>
-          <span className="bi-value">
-            {arrhenius_stress_factor !== null ? arrhenius_stress_factor.toFixed(4) : '--'}
-          </span>
-        </div>
-
-        {/* Cumulative Damage */}
-        <div className="bi-row">
-          <span className="bi-label">Cum. Damage</span>
-          <span className="bi-value">
-            {cumulative_damage !== null ? (cumulative_damage * 100).toFixed(3) : '--'}
-            <span style={{ color: 'var(--color-neutral-600)', fontWeight: 400 }}> %</span>
-          </span>
-        </div>
-
-        {/* Runtime */}
-        <div className="bi-row">
-          <span className="bi-label">Runtime</span>
-          <span className="bi-value">
-            {runtime_hours !== null ? runtime_hours.toFixed(2) : '--'}
-            <span style={{ color: 'var(--color-neutral-600)', fontWeight: 400 }}> h</span>
-          </span>
-        </div>
-
-        {/* Start-Stop Cycles */}
         <div className="bi-row" style={{ borderBottom: 'none' }}>
-          <span className="bi-label">Start-Stop Cycles</span>
+          <span className="bi-label">Run Time</span>
           <span className="bi-value">
-            {start_stop_cycles !== null ? start_stop_cycles : '--'}
+            {runtime_hours !== null ? runtime_hours.toFixed(1) : '--'}
+            <span style={{ color: 'var(--color-neutral-600)', fontWeight: 400 }}> h</span>
           </span>
         </div>
 
       </div>
 
-      {/* Demo mode indicator */}
       {demo_mode && (
         <div
           style={{

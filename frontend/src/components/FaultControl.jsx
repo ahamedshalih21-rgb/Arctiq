@@ -96,7 +96,7 @@ export default function FaultControl({ activeProduce, allMeta, onFaultTriggered 
           onClick={triggerFault}
           disabled={loading}
         >
-          ⚡ {loading ? 'INJECTING…' : 'TRIGGER FAULT'}
+          {loading ? 'INJECTING...' : 'TRIGGER FAULT'}
         </button>
 
         {/* Reset */}
@@ -106,12 +106,12 @@ export default function FaultControl({ activeProduce, allMeta, onFaultTriggered 
           onClick={resetFault}
           disabled={resetLoading}
         >
-          {resetLoading ? 'RESETTING…' : '↺  RESET FAULT'}
+          {resetLoading ? 'RESETTING...' : 'RESET FAULT'}
         </button>
 
         {anyFault && (
           <div className="fault-active-indicator">
-            ⚠ Cooling fault active
+            COOLING FAULT ACTIVE
           </div>
         )}
       </div>

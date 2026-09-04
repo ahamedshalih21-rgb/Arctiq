@@ -1,0 +1,95 @@
+Shelf-Life Estimation Program (SLEP) User Manual
+Step 1: Collect Calibration Datasets
+Prepare two temperature timeseries for calibrating the simulator:
+Closed-door (steady state) condition, characterized by a steadily oscillating temperature curve as in Figure 1
+Figure 1 Plot of measured air temperature in the middle of the refrigeration compartment of a domestic refrigerator set to 0 °C, under steady-state (no door opening) condition
+Open-door (transient) condition, capturing the temperature fluctuation before, during, and after the compartment door is opened for a relatively long period of time e.g., 10-15 minutes, as in Figure 2
+Figure 2 Plot of measured air temperature in the middle of the refrigeration compartment of a domestic refrigerator set to 0 °C, under transient (door opening) condition
+Step 2: Clean Calibration Datasets
+Clean the temperature history to be used for system identification:
+Delete regions of sensor temperature transition from room temperature to fridge temperature
+If the sampling rate is not constant, resample the data by interpolation to get a fixed sampling interval
+Convert date-time stamps to minutes starting from zero 
+Step 3: Install Additional Matlab Packages
+Install additional Matlab tools: System Identification Toolbox and Simulink 
+Step 4: Prepare Input Files
+Download the zipped file and extract it in any folder. Open the ‘Input Files’ folder.
+The Input files folder contains 5 excel workbooks in which the user must insert the inputs to the program. The description and purpose of each input file is given in the table below:
+Table 1 Description of Input Files
+File name
+Contents
+Purpose
+No door openings-cleaned.xlsx
+Ambient temperature timeseries inside the fridge while the fridge door is closed.
+Training dataset for system identification
+door opening-cleaned.xlsx
+Ambient temperature timeseries inside the fridge for a duration involving instances of the fridge door being opened and closed any number of times
+Identification of system behavior when door is opened
+FruitData.xlsx
+Geometric and inherent thermal properties of the fruit
+The fruit’s respiration-temperature profile
+The fruit’s shelf-life information and optimal storage temperature
+Expected environmental conditions, such as air velocity and surface convection coefficient
+Prediction of consumed and remaining shelf life over a given temperature timeseries
+SensorFeed.xlsx
+Temperature and humidity readings over time (whether simulated or monitored)
+Instants (in minutes counting from the start of the trip) at which the fridge door was detected/is expected to be opened/closed
+Record simulated/monitored ambient temperature and relative humidity
+Record the times at which the door was opened/closed, whether the events were monitored or simulated
+SysIDSetupData.xlsx
+Six plant-controller parameters to be deduced by the user offline (prior to running the program) from the open-door and closed-door timeseries
+Simulation time
+Plant-controller identification
+Defining the total simulation time
+No door openings-cleaned.xlsx
+The workbook contains only one worksheet containing the cleaned ambient temperature timeseries for steady-state, closed-door condition, where time is in minutes, starting from zero, and sampled at a fixed sampling rate. The data starts in cell A3:
+door opening-cleaned.xlsx
+Likewise, this workbook contains only one worksheet containing the cleaned ambient temperature timeseries for transient condition involving door openings, where time is in minutes, starting from zero, and sampled at a fixed sampling rate. The data starts in cell A3:
+FruitData.xlsx
+The workbook contains three worksheets: ‘key’, ‘OneTimeInput’, and ‘Decay Profile’.
+The first worksheet exists for informational purposes only, serving to inform the user of the description of each of the variables that should be defined in the next worksheet ‘OneTimeInput’. The ‘key’ worksheet segregates the fruit-related inputs into groups, gives the description, variable name, unit and source of each:
+The user actually defines these variables in the next worksheet ‘OneTimeInput’:
+Note the following:
+If an estimate of the initial shelf life is not provided by the user, then the user must instead provide the time elapsed since harvest.
+If the user does not provide a surface convection coefficient (h), the user must then instead utilize a Nu-Re-Pr correlation and provide its empirical parameters a_h, m_h and n_h
+In the last worksheet ‘Decay Profile’, the user must provide the respiration rate of the fruit at various temperatures as found in the literature or trusted handbooks. 
+SensorFeed.xlsx
+This workbook contains two worksheets: ‘TempRH’ and ‘DoorOpen’.
+In the first worksheet ‘TempRH’, temperature and relative humidity readings are written (either by the sensor measuring these variables in situ, or as a simulation output) at regular intervals, in minutes, starting from zero.
+In the case of preplanning, the temperature would be simulated, and hence, the table should be left empty by the user, as it will be written to during program execution.
+Note that if the sensor does not measure relative humidity, the program will prompt the user for an average or expected value of relative humidity during execution. If no value is provided by the user at the prompt, the program will use an average RH of 95%.
+If the fridge door is opened and closed in simulated trip, then the user must enter the instants at which the door is opened and closed in the second worksheet ‘DoorOpen’, where the times are in minutes, assuming the trip starts at 0 minutes.
+If door opening is not expected in a simulated trip, or if actual trip data is being processed, leave the data table blank:
+SysIDSetupData.xlsx
+This workbook contains only one worksheet. The user must specify the following parameters before running the program:
+And in the case of pre-planning: The simulation time, which is the expected trip time:
+The remaining parameters (ODTRR, CDTRR, and CST) are identified by inspecting cleaned open-door and closed-door temperature timeseries. The values of ODTRR, CDTRR and CST saved in the excel sheet are considered default values of these variables, unless the user specifies a different value at the command line prompt. The prompt for the values of ODTRR, CDTRR and CST will appear during program execution if the user chooses to identify a new system.
+The user may:
+Inspect both timeseries in excel (and subsequently enter the values of the 3 remaining parameters in this excel sheet) prior to running the program, or
+Inspect both timeseries during program execution and enter the values of the 3 remaining parameters in the Matlab command line when prompted. The latter option is preferred if the user is identifying the plant for the first time, as Simulink’s scope tool is easier than using Excel for identifying slopes and time differences between any two points in the data. 
+Step 5: Starting the program
+In the extracted folder, open the script named ‘IntegratedSLCalc.mlx’. Change the Matlab search path to the extracted folder, then click on the ‘Run’ button, or press F5 to run this script.
+When the program is run, the user will be asked whether they wish to use the program to predict the remaining shelf-life based on actual logged temperature and humidity histories (post-trip analysis), or, based on a simulated temperature history at a time prior to starting the actual trip (pre-trip signal simulation and analysis):
+Should the user select the ‘post-trip analysis’ option, the program would read actual sensor output from the worksheet ‘TempRH’ in the excel file ‘SensorFeed.xlsx’, and based on actual the temperature and humidity history, estimate the consumed and remaining shelf-lives. Otherwise, should the user select the ‘Pre-trip signal simulation and analysis’ option, the program would prompt the user to identify the system and simulate the fridge indoor temperature signal to output a simulated temperature history, based on which the shelf-life estimation model is run.  However, before simulating the refrigerator’s signal, its system dynamics must first be identified. Hence, the user would then be asked whether this system has been identified before:
+If this is a new system whose state-space model has not been identified before, click ‘No’. Otherwise, if this system has been identified AND was the last system you identified using this program, then choose ‘Yes’.
+If the user chooses ‘Yes’, the system identification step will be skipped, and the last-saved system model will be used for simulation. 
+If the user chooses ‘No’, the system identification tasks will commence in the background. First, the open-door and closed-door temperature timeseries will be displayed in Simulink’s scope tool, and then the user will be prompted to enter the values of the remaining three parameters in the command line. 
+An automatically generated plot of the open-door dataset appears.  To estimate ODTRR, which is the average temperature-rise rate when the door is opened, you may select any cycle in the stable region and estimate the upward slope at a time when the door is known to have been opened. Click on “Cursor measurements” , then move pointer 1 to the trough of the cycle, and pointer 2 to the first peak on the right of pointer 1. From the figure below, the ODTRR is about 1.313 degrees Celsius per minute (don’t convert between seconds and minutes).
+Figure 3 Estimation of ODTRR (time in minutes)
+Type 1.313 at the command prompt and click Enter:
+An automatically generated plot of the closed-door dataset appears.  Estimate the temperature-rise rate when the door is closed  (CDTRR). From the figure below, CDTRR appears to be 0.125 degrees Celsius per minute (do not convert between minutes and seconds).
+Figure 4 Estimation of CDTRR (time in minutes)
+At the next command prompt, enter 0.125  and hit Enter:
+Estimate the sample time of the discrete controller (CST) by measuring the time between a peak and the following trough in the stable region. Move pointer 1 to the peak of a cycle, and pointer 2 to the first trough on the right of pointer 1. The figure below shows that the discrete controller has a sample time of about 12.47 minutes. 
+Figure 5 Identifying the discrete controller sample time from ambient temperature timeseries measured under steady-state (no door-opening) condition
+Enter 12.47 at the third command prompt and click Enter:
+Note that if the user enters nothing (by hitting Enter key) at the command-line prompt for a variable, its corresponding default value in ‘SysIDSetupData.xlsx’ will be used as a default value.
+Next, an automatically generated plot shows the Hankel singular values for state-space models of the orders between 1 and 10. Generally, the higher the order, the lower is the Hankel value. States with relatively small Hankel singular values can be safely discarded. (Red is usually the recommended choice for model reduction).  Select the model order in the Chosen Order list and click Apply.
+Figure 6 Example of an automatically generated plot of Hankel Singular Values
+With the completion of this step, the calibration of the Refrigerator Temperature Simulator is finally complete. 
+For the case of trip pre-planning/simulation, only temperature can be simulated but not relative humidity. Therefore, the program prompts the user for an average or expected value of the relative humidity inside the refrigeration compartment. 
+The user should provide a value between 0 and 1, and then hit Enter. If the user hits the Enter key without providing any value, the program will assume the relative humidity to be 95%.
+Step 6: Program Outputs
+At the end of the shelf-life estimation process, the program displays a message box to the user. If the product is expected to have spoiled before the end of the input time history, the time at which the product has spoiled is output to the user: 
+Otherwise, if the product has not already spoiled, the program then subtracts the consumed shelf-life from the user-provided expected shelf-life, to output the remaining shelf-life which can be achieved if the temperature is restored to the optimal level:
+In addition, a plot of ambient temperature, pulp temperature, and normalized decay rate over time is also available:

@@ -1,0 +1,40 @@
+{
+  "model_type": "PyTorch_LSTM",
+  "mae_hours": 5.355,
+  "rmse_hours": 9.437,
+  "r2_score": 0.9893,
+  "epochs_trained": 19,
+  "risk_classification": {
+    "HIGH": {
+      "precision": 0.9116564417177914,
+      "recall": 0.9986559139784946,
+      "f1-score": 0.9531751122514432,
+      "support": 744.0
+    },
+    "LOW": {
+      "precision": 0.9993425378040762,
+      "recall": 0.9737347853939782,
+      "f1-score": 0.9863724853990915,
+      "support": 1561.0
+    },
+    "MEDIUM": {
+      "precision": 0.5625,
+      "recall": 0.4251968503937008,
+      "f1-score": 0.484304932735426,
+      "support": 127.0
+    },
+    "accuracy": 0.9527138157894737,
+    "macro avg": {
+      "precision": 0.8244996598406225,
+      "recall": 0.7991958499220578,
+      "f1-score": 0.8079508434619869,
+      "support": 2432.0
+    },
+    "weighted avg": {
+      "precision": 0.9497054252262334,
+      "recall": 0.9527138157894737,
+      "f1-score": 0.9499985442765027,
+      "support": 2432.0
+    }
+  }
+}

@@ -21,7 +21,7 @@ export default function BatchCard({ metadata }) {
         </div>
         <div className="bi-row">
           <span className="bi-label">Produce</span>
-          <span className="bi-value">{metadata.emoji} {metadata.display_name}</span>
+          <span className="bi-value">{metadata.display_name}</span>
         </div>
         <div className="bi-row">
           <span className="bi-label">Weight</span>

@@ -210,7 +210,7 @@ powershell -ExecutionPolicy Bypass -Command "npm run dev"
 | GET | `/api/readings` | Live sensor readings (all batches) |
 | GET | `/api/readings/{produce_type}` | Reading for one batch |
 | GET | `/api/history/{produce_type}?n=30` | Last N readings for trend chart |
-| GET | `/api/prediction` | GBR spoilage prediction for all batches |
+| GET | `/api/prediction` | PyTorch LSTM spoilage prediction for all batches (360-min window) |
 | GET | `/api/prediction/{produce_type}` | Prediction for one batch |
 | GET | `/api/value` | Value/loss-prevented metric |
 | POST | `/api/trigger-fault` | Inject cooling fault (demo control) |
@@ -228,31 +228,35 @@ powershell -ExecutionPolicy Bypass -Command "npm run dev"
 | POST | `/api/recovery/listings/{batch_id}/interest?buyer_id=B001` | Simulate buyer interest |
 | POST | `/api/recovery/listings/{batch_id}/status` | Update listing status |
 
----
-
-## Demo Recording Guide
-
-1. Start backend + frontend as above
-2. Allow 10–15 seconds for initial stable readings
-3. Select **Leafy Greens** tab (fastest spoiler, most dramatic)
-4. In the **Demo Control** panel:
-   - Set speed to **5×**
-   - Click **Trigger Fault**
-5. Watch temperature drift, risk transition Safe → Watch → Critical within ~60–90 seconds
-6. Watch **Risk Stock** listing appear automatically as risk escalates
-7. Watch **Compressor Health Score** decrease (DEMO_MODE = True in `compressor_simulator.py`)
-8. Use **Reset Fault** to return to stable for a clean before/after
 
 ---
 
-## Produce Spoilage Profiles
+## Produce Spoilage Profiles (Mendeley Calibrated)
 
-| Produce | Ideal Temp | Ideal Humidity | Base Shelf Life | Main Risk |
-|---|---|---|---|---|
-| Leafy Greens | 3°C | 92% | 72 hours | Heat (fast spoiler) |
-| Tomatoes | 13°C | 87% | 120 hours | Heat + humidity |
-| Potatoes | 7°C | 87% | 240 hours | Humidity (hardy) |
+Calibrated against empirical reefer data and respiration decay profiles from Mendeley Data ([DOI: 10.17632/kphtgxn3ff.4](https://data.mendeley.com/datasets/kphtgxn3ff/4)):
 
----
+| Produce | Ideal Temp | Safe Temp | Ideal Humidity | Base Shelf Life | Respiration Q10 | Sensitivity & Behavior |
+|---|---|---|---|---|---|---|
+| **Spinach** | 2.0°C | 4.0°C | 95% | 288 hours (12 days) | 2.8 | Highly heat-sensitive leafy green |
+| **Tomato** | 13.0°C | 15.0°C | 88% | 360 hours (15 days) | 2.2 | Chilling injury occurs below 10°C; heat-sensitive |
+| **Strawberry** | 1.5°C | 4.0°C | 92% | 192 hours (8 days) | 2.5 | High perishability; rapid decay upon warming |
 
-*Built for Technova 2026 · All sensor data is simulated · No real hardware or external APIs required*
+### 10-Feature Sequence Architecture (360 Timesteps)
+1. `temperature` (°C)
+2. `humidity` (%)
+3. `door_event` (0 or 1)
+4. `batch_age_hours`
+5. `hours_in_cold_storage`
+6. `cumulative_heat_exposure` (degree-hours)
+7. `time_above_safe_temperature` (hours)
+8. `temperature_rate_of_change` (°C/min)
+9. `produce_type` (0: Spinach, 1: Tomato, 2: Strawberry)
+10. `batch_picked_temperature` (°C)
+
+### Spoilage Risk Thresholds
+- **> 24 hours**: LOW RISK (Safe operational zone)
+- **12–24 hours**: MEDIUM RISK (Intervention preparation zone)
+- **≤ 12 hours**: HIGH RISK (Critical intervention / clearance sale zone)
+
+> [!NOTE]
+> **Scientific Operational Reference Disclaimer**: ColdSense provides operational decision support based on monitored temperature histories and kinetic respiration decay models. It does not claim to measure the exact cellular biological state of produce in situ without destructive testing.

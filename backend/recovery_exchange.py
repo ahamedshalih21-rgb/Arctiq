@@ -56,17 +56,30 @@ RECOVERY_PRICE_FRACTION_MAX = 0.80   # Ceiling: 80% of batch value
 #   At this many hours remaining, the listing price is at the ceiling (80%).
 #   Below this, it scales down proportionally toward the floor.
 PRODUCE_PRICING = {
+    "spinach": {
+        "value_per_kg_inr": 65.0,             # Rs 65/kg
+        "reference_recovery_window_hours": 48.0,
+    },
+    "tomato": {
+        "value_per_kg_inr": 45.0,             # Rs 45/kg
+        "reference_recovery_window_hours": 72.0,
+    },
+    "strawberry": {
+        "value_per_kg_inr": 120.0,            # Rs 120/kg
+        "reference_recovery_window_hours": 36.0,  # highly perishable
+    },
+    # Backward compatibility aliases
     "leafy_greens": {
-        "value_per_kg_inr": 60.0,             # Rs 60/kg
+        "value_per_kg_inr": 65.0,
         "reference_recovery_window_hours": 48.0,
     },
     "tomatoes": {
-        "value_per_kg_inr": 40.0,             # Rs 40/kg
+        "value_per_kg_inr": 45.0,
         "reference_recovery_window_hours": 72.0,
     },
-    "potatoes": {
-        "value_per_kg_inr": 20.0,             # Rs 20/kg
-        "reference_recovery_window_hours": 120.0,
+    "milk": {
+        "value_per_kg_inr": 55.0,
+        "reference_recovery_window_hours": 30.0,
     },
 }
 
@@ -107,28 +120,28 @@ SIMULATED_BUYERS = [
         "buyer_name": "City Canteen",
         "buyer_type": "Canteen",
         "distance_km": 1.2,
-        "preferred_produce": ["leafy_greens", "tomatoes", "potatoes"],
+        "preferred_produce": ["leafy_greens", "tomatoes", "milk"],
     },
     {
         "buyer_id":   "B003",
-        "buyer_name": "Farm Feed Depot",
-        "buyer_type": "Animal Feed Vendor",
+        "buyer_name": "Daily Dairy Vendor",
+        "buyer_type": "Dairy Distributor",
         "distance_km": 1.8,
-        "preferred_produce": ["leafy_greens", "potatoes"],
+        "preferred_produce": ["milk"],
     },
     {
         "buyer_id":   "B004",
         "buyer_name": "FreshBite Juice Bar",
         "buyer_type": "Juice Stall",
         "distance_km": 2.1,
-        "preferred_produce": ["leafy_greens", "tomatoes"],
+        "preferred_produce": ["leafy_greens", "tomatoes", "milk"],
     },
     {
         "buyer_id":   "B005",
         "buyer_name": "Metro Food Processing",
         "buyer_type": "Food Processing Buyer",
         "distance_km": 3.4,
-        "preferred_produce": ["tomatoes", "potatoes"],
+        "preferred_produce": ["tomatoes", "milk"],
     },
 ]
 
