@@ -173,21 +173,27 @@ python model/train.py
 # → prints validation MAE (~5.36 hours, R² ≈ 0.989)
 ```
 
-### Step 4 — Start the backend
+### Quick Start (Windows)
+
+Simply double-click **`start_all.bat`** (or run `.\start_all.bat` in terminal) to launch both the backend and frontend simultaneously in separate windows.
+
+Or run them individually:
+
+### Step 3 — Start the backend
 
 ```bash
 cd coldsense/backend
-uvicorn main:app --port 8000 --reload
+python -m uvicorn main:app --port 8000 --reload
 # → API running at http://localhost:8000
 # → Docs at http://localhost:8000/docs
 ```
 
-### Step 5 — Start the frontend
+### Step 4 — Start the frontend
 
 ```bash
 cd coldsense/frontend
 # On Windows PowerShell:
-powershell -ExecutionPolicy Bypass -Command "npm run dev"
+npm.cmd run dev
 # → Dashboard running at http://localhost:5173
 ```
 
