@@ -5,7 +5,7 @@ Manages at-risk produce listings and simulated nearby buyer interactions.
 
 OVERVIEW:
   When a produce batch transitions to WATCH or CRITICAL risk level (as
-  determined by the GBR spoilage prediction model), this service automatically
+  determined by the PyTorch LSTM spoilage prediction model), this service automatically
   creates a Risk Stock listing — representing produce that still has recoverable
   economic value but must be sold, moved, or used before total spoilage occurs.
 
@@ -218,7 +218,7 @@ class RecoveryExchangeService:
         batch_weight_kg: float,
     ):
         """
-        Called after each GBR spoilage prediction.
+        Called after each PyTorch LSTM spoilage prediction.
         Creates or updates a Risk Stock listing if the batch is at trigger level.
         Safe (non-trigger) batches expire existing listings if they were downgraded.
         """

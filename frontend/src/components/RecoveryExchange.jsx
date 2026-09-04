@@ -4,7 +4,7 @@ import React from 'react';
  * RecoveryExchange
  * ----------------
  * Displays the Risk Stock / Recovery Exchange module.
- * Shows at-risk batch listings derived from GBR spoilage predictions,
+ * Shows at-risk batch listings derived from PyTorch LSTM spoilage predictions,
  * and simulated nearby buyer interest statuses.
  *
  * This is an industrial decision-support module, not a marketplace UI.

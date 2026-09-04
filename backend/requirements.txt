@@ -1,8 +1,7 @@
 fastapi>=0.111.0
 uvicorn[standard]>=0.29.0
 numpy>=1.26.0
-# TensorFlow (optional — install if available, GBR fallback used otherwise)
-# tensorflow>=2.16.0
+torch>=2.0.0
 scikit-learn>=1.4.0
 joblib>=1.3.0
 matplotlib>=3.8.0

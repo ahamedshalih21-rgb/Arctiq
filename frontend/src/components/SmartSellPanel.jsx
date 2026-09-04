@@ -331,7 +331,7 @@ export default function SmartSellPanel({ recommendations, loading }) {
       <div className="hmi-section-title">SMARTSELL RECOMMENDATIONS</div>
       <div className="ss-horizon-note">
         <span style={{ color: 'var(--color-neutral-600)' }}>
-          Model prediction: GBR-driven operational reference.
+          Model prediction: PyTorch LSTM-driven operational reference.
           Projected horizon: trend-based early warning estimate (not model-validated).
         </span>
       </div>

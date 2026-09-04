@@ -29,10 +29,11 @@ from typing import Optional, Union, List
 import torch
 import torch.nn as nn
 
-MODEL_DIR   = os.path.join(os.path.dirname(__file__), "..", "model", "saved_model")
-LSTM_PATH   = os.path.join(MODEL_DIR, "coldsense_lstm.pt")
-SCALER_PATH = os.path.join(MODEL_DIR, "scaler.joblib")
-METRICS_PATH = os.path.join(MODEL_DIR, "metrics.json")
+MODEL_DIR          = os.path.join(os.path.dirname(__file__), "..", "model", "saved_model")
+LSTM_PATH          = os.path.join(MODEL_DIR, "coldsense_lstm.pt")
+SCALER_PATH        = os.path.join(MODEL_DIR, "scaler.joblib")
+SCALER_PARAMS_PATH = os.path.join(MODEL_DIR, "scaler_params.json")
+METRICS_PATH       = os.path.join(MODEL_DIR, "metrics.json")
 
 FEATURE_NAMES = [
     "temperature",
@@ -94,6 +95,7 @@ class ColdSensePredictor:
     def __init__(self):
         self.model: Optional[ColdSenseLSTM] = None
         self.scaler = None
+        self.scaler_params = {}
         self.metrics = {}
         self.model_type: str = "lstm"
         self._loaded = False
@@ -124,6 +126,13 @@ class ColdSensePredictor:
         ).to(self.device)
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.model.eval()
+
+        if os.path.exists(SCALER_PARAMS_PATH):
+            try:
+                with open(SCALER_PARAMS_PATH) as f:
+                    self.scaler_params = json.load(f)
+            except Exception:
+                pass
 
         if os.path.exists(METRICS_PATH):
             try:

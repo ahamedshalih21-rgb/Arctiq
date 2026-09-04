@@ -529,7 +529,7 @@ def get_smartsell_recommendations():
 
     Returns all batches sorted by sell_priority_score (highest first).
     Each recommendation includes:
-      - warning_stage and model_hours_remaining (from GBR)
+      - warning_stage and model_hours_remaining (from PyTorch LSTM)
       - projected_risk_horizon_hours (trend-based early warning)
       - Sell priority score (0–100) and priority_action
       - Dynamic recommended selling price, discount, margin
@@ -539,7 +539,7 @@ def get_smartsell_recommendations():
     and evolve gradually — they do not regenerate on each request.
 
     Note on horizon distinction:
-      model_hours_remaining = GBR model-driven operational reference
+      model_hours_remaining = PyTorch LSTM model-driven operational reference
       projected_risk_horizon_hours = trend-based early warning estimate
     """
     if not predictor._loaded:
@@ -580,9 +580,9 @@ def get_smartsell_recommendations():
         "count":           len(recommendations),
         "generated_at":    time.time(),
         "note": (
-            "model_hours_remaining = GBR model-driven operational reference. "
+            "model_hours_remaining = PyTorch LSTM model-driven operational reference. "
             "projected_risk_horizon_hours = trend-based early warning estimate "
-            "(not the GBR model's validated prediction output)."
+            "(not the LSTM model's validated prediction output)."
         ),
     }
 

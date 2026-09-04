@@ -81,7 +81,7 @@ def calculate_spoilage_probability(model_hours: float) -> float:
     """
     Estimate probability of spoilage (0–1) from model-predicted hours.
     Used in waste and financial exposure calculations.
-    This is a heuristic mapping, not a probabilistic GBR output.
+    This is a heuristic mapping, not a probabilistic PyTorch LSTM output.
 
     At 0h: probability = 1.0
     At URGENCY_SAFE_HOURS: probability ≈ 0.02

@@ -7,7 +7,7 @@
 
 Cold-storage facilities worldwide lose 15–35% of fresh produce to undetected spoilage events — cooling faults, door-left-open scenarios, and humidity spikes that go unnoticed until it's too late. **ColdSense** demonstrates how a lightweight AI system, reading inexpensive IoT sensors, can:
 
-1. **Predict hours-until-spoilage risk** per produce batch in real time using a Gradient Boosting Regressor.
+1. **Predict hours-until-spoilage risk** per produce batch in real time using a PyTorch LSTM sequence model.
 2. **Monitor compressor health** using a simulation-based Arrhenius-degradation model.
 3. **Create recovery listings** automatically when a batch approaches spoilage — connecting vendors to nearby buyers to recover economic value that would otherwise be lost.
 
@@ -16,28 +16,28 @@ Cold-storage facilities worldwide lose 15–35% of fresh produce to undetected s
 ## Architecture
 
 ```
-Synthetic Data          Pre-trained Model         Live Backend          React Frontend
-──────────────          ─────────────────         ────────────          ──────────────
-generate.py      →      train.py (GBR)     →      FastAPI :8000   →     Vite :5173
- 6,000 sequences         saved .joblib              /api/readings         SensorChart
- 144,000 rows            norm_params.json           /api/prediction       RiskBadge
- 3 produce types         MAE ≈ 6.4 hrs             /api/compressor       FaultControl
-                                               /api/recovery/listings    CompressorHealth
-                                               /api/recovery/buyers      RecoveryExchange
+Sequence Data           PyTorch LSTM Model        Live Backend          React Frontend
+─────────────           ──────────────────        ────────────          ──────────────
+Mendeley Calibrated →   train.py (LSTM)    →      FastAPI :8000   →     Vite :5173
+ 360-step windows        coldsense_lstm.pt         /api/readings         SensorChart
+ 10 features             scaler.joblib             /api/prediction       RiskBadge
+ 3 produce types         MAE ≈ 5.35 hrs            /api/compressor       FaultControl
+                                                   /api/recovery/listings CompressorHealth
+                                                   /api/recovery/buyers   RecoveryExchange
 ```
 
 ```
 coldsense/
 ├── data_generator/generate.py          # Synthetic training data
 ├── model/
-│   ├── train.py                        # GBR training + evaluation
-│   ├── data/training_data.csv          # Generated dataset (144k rows)
-│   ├── saved_model/                    # coldsense_model.joblib + norm_params.json
+│   ├── train.py                        # PyTorch LSTM training + evaluation
+│   ├── data/                           # Sequence datasets (train/test_sequences.npz)
+│   ├── saved_model/                    # coldsense_lstm.pt, scaler.joblib, scaler_params.json, metrics.json
 │   └── plots/
 ├── backend/
 │   ├── main.py                         # FastAPI app + all endpoints
-│   ├── simulator.py                    # Live sensor stream (cold storage)
-│   ├── predictor.py                    # GBR model inference
+│   ├── simulator.py                    # Live sensor stream & 360-step sliding window buffer
+│   ├── predictor.py                    # PyTorch LSTM model inference
 │   ├── compressor_simulator.py         # Arrhenius-based compressor health model
 │   ├── recovery_exchange.py            # Risk Stock / Recovery Exchange service
 │   └── requirements.txt
@@ -63,7 +63,7 @@ coldsense/
 ## Currently Implemented
 
 ### Spoilage Prediction
-1. **Gradient Boosting Regressor (GBR)** — active spoilage prediction model (scikit-learn)
+1. **PyTorch LSTM Regressor** — active spoilage prediction model (2-layer LSTM + MLP head)
 2. Simulated sensor/environmental data for three produce types
 3. Temperature monitoring (per produce batch)
 4. Humidity monitoring (per produce batch)
@@ -85,7 +85,7 @@ coldsense/
 18. Demo mode: accelerated degradation for presentations
 
 ### Risk Stock / Recovery Exchange
-19. Automatic Risk Stock listing creation when GBR predicts Watch or Critical risk
+19. Automatic Risk Stock listing creation when LSTM predicts Watch or Critical risk
 20. Listing deduplication — updates existing listing rather than creating duplicates
 21. Recovery Exchange prototype workflow (Active → Interested → Reserved → Sold)
 22. Prototype recovery price heuristic (produce-specific INR pricing)
@@ -118,14 +118,15 @@ Replace `simulator.py`'s `_loop()` with an MQTT subscriber or HTTP polling loop 
 
 | Property | Value |
 |---|---|
-| Spoilage model | GradientBoostingRegressor (scikit-learn) |
-| Input | 24-hour rolling window × [temp, humidity, door_event, produce_type] |
-| Output | `hours_until_spoilage_risk` (regression) |
-| Training data | 6,000 sequences × 24 timesteps = 144,000 rows (synthetic) |
-| Validation MAE | ~6.4 hours |
-| Risk thresholds | Safe > 48h, Watch > 24h, Critical ≤ 24h |
+| Spoilage model | PyTorch LSTM (2-layer LSTM + MLP head) |
+| Input | 360 timesteps (6 hours @ 1-min resolution) × 10 features |
+| Output | `remaining_shelf_life_hours` (continuous regression) |
+| Training data | Mendeley-calibrated sequence datasets (3 produce types) |
+| Validation MAE | ~5.36 hours |
+| Test R² Score | 0.9893 |
+| Risk thresholds | Low > 24h, Medium 12–24h, High ≤ 12h |
 
-> **LSTM / deep learning note:** LSTM-based time-series approaches may be explored in future with larger real-world datasets. The currently active production model is the Gradient Boosting Regressor.
+> **PyTorch LSTM Architecture:** The active model uses a 2-layer LSTM backbone (hidden dimension 64, dropout 0.20) coupled with a multi-layer perceptron regression head trained on 360-timestep sequence windows.
 
 ### Compressor Degradation Model Note
 
@@ -159,26 +160,18 @@ This is **not a validated market pricing algorithm**. Prices are illustrative on
 
 ```bash
 cd coldsense/backend
-pip install fastapi "uvicorn[standard]" numpy scikit-learn joblib matplotlib pandas
+pip install fastapi "uvicorn[standard]" numpy torch scikit-learn joblib matplotlib pandas
 ```
 
-### Step 2 — Generate training data (one-time, if not already present)
+### Step 2 — Train the model (one-time, if not already trained)
 
 ```bash
 cd coldsense
-python data_generator/generate.py
-# → creates model/data/training_data.csv (144,000 rows)
-```
-
-### Step 3 — Train the model (one-time, if not already trained)
-
-```bash
 python model/train.py
-# → saves model/saved_model/coldsense_model.joblib
-# → prints validation MAE (~6.4 hours)
+# → saves model/saved_model/coldsense_lstm.pt
+# → saves model/saved_model/scaler.joblib & scaler_params.json
+# → prints validation MAE (~5.36 hours, R² ≈ 0.989)
 ```
-
-> **Note:** TensorFlow is optional. The training script automatically falls back to GradientBoostingRegressor if TF is unavailable. The pre-trained GBR model is already included in `model/saved_model/`.
 
 ### Step 4 — Start the backend
 

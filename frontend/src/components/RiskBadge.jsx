@@ -7,7 +7,7 @@ import React from 'react';
  * projected risk horizon, clearly labeled to avoid misrepresentation.
  *
  * Labels:
- *   "Model Prediction" = GBR model's hours_remaining output (operational reference)
+ *   "Model Prediction" = PyTorch LSTM model's hours_remaining output (operational reference)
  *   "Projected Horizon" = trend-based early warning estimate (not model-validated)
  */
 

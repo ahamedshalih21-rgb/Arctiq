@@ -1,16 +1,16 @@
 """
 ColdSense — Early Warning Service
 ===================================
-Implements a two-stage spoilage warning system on top of the existing GBR model.
+Implements a two-stage spoilage warning system on top of the existing PyTorch LSTM model.
 
 IMPORTANT — Technical Honesty:
 -------------------------------
-The GBR model predicts `hours_until_spoilage` based on the training data distribution.
+The PyTorch LSTM model predicts `hours_until_spoilage` based on sequence data (360 timesteps x 10 features).
 This prediction is used directly as the model-driven operational reference.
 
-The ~12-hour EARLY WARNING is NOT presented as a GBR-validated ML prediction.
+The ~12-hour EARLY WARNING is NOT presented as an LSTM-validated ML prediction.
 It is a projected risk horizon calculated from:
-  - Current GBR-predicted hours remaining
+  - Current LSTM-predicted hours remaining
   - Temperature trend (slope over recent readings)
   - Humidity trend (slope over recent readings)
   - Product perishability factor (product-type multiplier)
@@ -21,11 +21,11 @@ action threshold (~6.4h in observed demo operation).
 
 Operational State Hierarchy:
 -------------------------------
-The hierarchy integrates both the GBR model output and the trend projection.
+The hierarchy integrates both the LSTM model output and the trend projection.
 States are never contradictory: if trend projection gives <12h but model says
 >48h with flat trends, the model reading takes precedence for definitive status.
 
-| GBR Hours Remaining | Operational State |
+| LSTM Hours Remaining | Operational State |
 |--------------------|-------------------|
 | > 48h              | SAFE              |
 | 24–48h             | MONITOR           |
@@ -112,7 +112,7 @@ def compute_projected_horizon(
     """
     Estimate a projected spoilage risk horizon that accounts for sensor trends.
 
-    This is NOT the GBR model output. It is a trend-extrapolation that gives
+    This is NOT the direct LSTM model output. It is a trend-extrapolation that gives
     operators an earlier indication of developing risk.
 
     Method:
@@ -125,7 +125,7 @@ def compute_projected_horizon(
     to clearly distinguish it from the model's direct prediction.
 
     Parameters:
-        model_hours          — GBR predicted hours_until_spoilage
+        model_hours          — LSTM predicted hours_until_spoilage
         temp_slope           — °C per tick, positive = rising
         humidity_slope       — % per tick
         ideal_temp           — product's ideal storage temperature
@@ -231,7 +231,7 @@ def assess_early_warning(
 
     Returns a structured dict with:
       warning_stage              — operational state string
-      model_hours_remaining      — direct GBR output (model-driven reference)
+      model_hours_remaining      — direct PyTorch LSTM output (model-driven reference)
       projected_risk_horizon_hours — trend-based early warning estimate
       temp_slope_per_tick        — temperature trend (°C/tick)
       humidity_slope_per_tick    — humidity trend (%/tick)
@@ -243,7 +243,7 @@ def assess_early_warning(
       horizon_note               — disclaimer text for the projected horizon
 
     IMPORTANT: The API response must always include horizon_note to ensure
-    the projected horizon is never mistaken for a GBR-validated ML prediction.
+    the projected horizon is never mistaken for an LSTM-validated ML prediction.
     """
     temp_slope = compute_temperature_slope(history)
     hum_slope  = compute_humidity_slope(history)
@@ -285,7 +285,7 @@ def assess_early_warning(
         "warning_description":          descriptions.get(state, ""),
         "horizon_note": (
             "Projected risk horizon is a trend-based estimate derived from sensor slope, "
-            "temperature excursion, and product perishability. It is not the GBR model's "
+            "temperature excursion, and product perishability. It is not the PyTorch LSTM model's "
             "validated prediction output. The model-driven critical action threshold is "
             f"approximately {CRITICAL_HOURS}h based on observed operational behaviour."
         ),
