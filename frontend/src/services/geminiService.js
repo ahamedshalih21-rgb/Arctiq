@@ -37,10 +37,12 @@ Always respond in simple, farmer-friendly language. Use examples. Provide next s
     ]
   });
 
-  // Endpoints to try in order (gemini-1.5-flash and gemini-pro)
+  // Endpoints to try in order (active Gemini models with fallback)
   const endpoints = [
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`,
     `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
   ];
 
   for (const url of endpoints) {
