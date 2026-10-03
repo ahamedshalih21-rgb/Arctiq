@@ -35,7 +35,7 @@ const BATCH_META = {
 };
 
 /* ─── Core data hook ─────────────────────────────────────────────────────────── */
-function useColdSense() {
+function useArctiq() {
   const [readings, setReadings]         = useState({});
   const [predictions, setPredictions]   = useState({});
   const [history, setHistory]           = useState({});
@@ -226,7 +226,7 @@ function InventoryBatchCard({ pt, predictions, readings, ssRec, isActive, onSele
 /* ─── App ───────────────────────────────────────────────────────────────────── */
 export default function App() {
   const [activeProduce, setActiveProduce] = useState('spinach');
-  const { readings, predictions, history, lastUpdated, error, connected, fetchAll } = useColdSense();
+  const { readings, predictions, history, lastUpdated, error, connected, fetchAll } = useArctiq();
   const { compressor, fetchCompressor } = useCompressor();
   const { listings, buyers, fetchRecovery } = useRecovery();
   const { recommendations, ssLoading, fetchSmartSell } = useSmartSell();
@@ -267,9 +267,9 @@ export default function App() {
       {/* Top bar */}
       <header className="topbar" role="banner">
         <div className="topbar-logo">
-          <div className="logo-icon" aria-hidden="true">CS</div>
+          <div className="logo-icon" aria-hidden="true">AQ</div>
           <div>
-            <div className="logo-text">ColdSense</div>
+            <div className="logo-text">Arctiq</div>
             <div className="logo-subtitle">Smart Inventory + Pricing System</div>
           </div>
         </div>
@@ -300,7 +300,7 @@ export default function App() {
           <div className="error-msg">
             Cannot reach <code>localhost:8000</code>. Start the backend:
             <br /><br />
-            <code>cd coldsense/backend</code>
+            <code>cd Arctiq/backend</code>
             <br />
             <code>uvicorn main:app --port 8000</code>
           </div>
@@ -432,7 +432,7 @@ export default function App() {
             Active: {PRODUCE_CONFIG[activeProduce].display_name}
           </div>
         </div>
-        <div>ColdSense · Technova 2026 · Simulation</div>
+        <div>Arctiq · Technova 2026 · Simulation</div>
       </footer>
 
     </div>

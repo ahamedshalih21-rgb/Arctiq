@@ -1,11 +1,11 @@
-# ColdSense
+# Arctiq
 **AI-powered cold-storage monitoring and recovery exchange dashboard** — Technova 2026 Hackathon Demo
 
 ---
 
 ## Problem Statement
 
-Cold-storage facilities worldwide lose 15–35% of fresh produce to undetected spoilage events — cooling faults, door-left-open scenarios, and humidity spikes that go unnoticed until it's too late. **ColdSense** demonstrates how a lightweight AI system, reading inexpensive IoT sensors, can:
+Cold-storage facilities worldwide lose 15–35% of fresh produce to undetected spoilage events — cooling faults, door-left-open scenarios, and humidity spikes that go unnoticed until it's too late. **Arctiq** demonstrates how a lightweight AI system, reading inexpensive IoT sensors, can:
 
 1. **Predict hours-until-spoilage risk** per produce batch in real time using a PyTorch LSTM sequence model.
 2. **Monitor compressor health** using a simulation-based Arrhenius-degradation model.
@@ -19,7 +19,7 @@ Cold-storage facilities worldwide lose 15–35% of fresh produce to undetected s
 Sequence Data           PyTorch LSTM Model        Live Backend          React Frontend
 ─────────────           ──────────────────        ────────────          ──────────────
 Mendeley Calibrated →   train.py (LSTM)    →      FastAPI :8000   →     Vite :5173
- 360-step windows        coldsense_lstm.pt         /api/readings         SensorChart
+ 360-step windows        arctiq_lstm.pt            /api/readings         SensorChart
  10 features             scaler.joblib             /api/prediction       RiskBadge
  3 produce types         MAE ≈ 5.35 hrs            /api/compressor       FaultControl
                                                    /api/recovery/listings CompressorHealth
@@ -27,12 +27,12 @@ Mendeley Calibrated →   train.py (LSTM)    →      FastAPI :8000   →     Vi
 ```
 
 ```
-coldsense/
+Arctiq/
 ├── data_generator/generate.py          # Synthetic training data
 ├── model/
 │   ├── train.py                        # PyTorch LSTM training + evaluation
 │   ├── data/                           # Sequence datasets (train/test_sequences.npz)
-│   ├── saved_model/                    # coldsense_lstm.pt, scaler.joblib, scaler_params.json, metrics.json
+│   ├── saved_model/                    # arctiq_lstm.pt, scaler.joblib, scaler_params.json, metrics.json
 │   └── plots/
 ├── backend/
 │   ├── main.py                         # FastAPI app + all endpoints
@@ -99,7 +99,7 @@ coldsense/
 
 ## Future Hardware Integration
 
-ColdSense is currently fully simulation-based. The path to real hardware integration is straightforward:
+Arctiq is currently fully simulation-based. The path to real hardware integration is straightforward:
 
 | Component | Purpose | Part |
 |---|---|---|
@@ -159,16 +159,16 @@ This is **not a validated market pricing algorithm**. Prices are illustrative on
 ### Step 1 — Install Python dependencies
 
 ```bash
-cd coldsense/backend
+cd Arctiq/backend
 pip install fastapi "uvicorn[standard]" numpy torch scikit-learn joblib matplotlib pandas
 ```
 
 ### Step 2 — Train the model (one-time, if not already trained)
 
 ```bash
-cd coldsense
+cd Arctiq
 python model/train.py
-# → saves model/saved_model/coldsense_lstm.pt
+# → saves model/saved_model/arctiq_lstm.pt
 # → saves model/saved_model/scaler.joblib & scaler_params.json
 # → prints validation MAE (~5.36 hours, R² ≈ 0.989)
 ```
@@ -182,7 +182,7 @@ Or run them individually:
 ### Step 3 — Start the backend
 
 ```bash
-cd coldsense/backend
+cd Arctiq/backend
 python -m uvicorn main:app --port 8000 --reload
 # → API running at http://localhost:8000
 # → Docs at http://localhost:8000/docs
@@ -191,7 +191,7 @@ python -m uvicorn main:app --port 8000 --reload
 ### Step 4 — Start the frontend
 
 ```bash
-cd coldsense/frontend
+cd Arctiq/frontend
 # On Windows PowerShell:
 npm.cmd run dev
 # → Dashboard running at http://localhost:5173
@@ -258,4 +258,4 @@ Calibrated against empirical reefer data and respiration decay profiles from Men
 - **≤ 12 hours**: HIGH RISK (Critical intervention / clearance sale zone)
 
 > [!NOTE]
-> **Scientific Operational Reference Disclaimer**: ColdSense provides operational decision support based on monitored temperature histories and kinetic respiration decay models. It does not claim to measure the exact cellular biological state of produce in situ without destructive testing.
+> **Scientific Operational Reference Disclaimer**: Arctiq provides operational decision support based on monitored temperature histories and kinetic respiration decay models. It does not claim to measure the exact cellular biological state of produce in situ without destructive testing.

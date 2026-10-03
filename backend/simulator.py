@@ -1,5 +1,5 @@
 """
-ColdSense — Live Sensor Simulator (10-Feature 360-Minute Buffering)
+Arctiq — Live Sensor Simulator (10-Feature 360-Minute Buffering)
 ==================================================================
 Empirically calibrated to Mendeley Dataset (DOI: 10.17632/kphtgxn3ff.4).
 

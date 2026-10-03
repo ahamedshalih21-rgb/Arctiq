@@ -1,5 +1,5 @@
 """
-ColdSense — Risk Stock / Recovery Exchange Service
+Arctiq — Risk Stock / Recovery Exchange Service
 ===================================================
 Manages at-risk produce listings and simulated nearby buyer interactions.
 

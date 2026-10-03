@@ -1,5 +1,5 @@
 """
-ColdSense — FastAPI Backend
+Arctiq — FastAPI Backend
 Run: uvicorn main:app --reload --port 8000
 """
 
@@ -19,11 +19,11 @@ from services.notification_service import notification_service
 import asyncio
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("coldsense")
+logger = logging.getLogger("arctiq")
 
 # ── App setup ──────────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="ColdSense API",
+    title="Arctiq API",
     description="Cold-storage spoilage prediction and smart inventory management backend",
     version="3.0.0",
 )

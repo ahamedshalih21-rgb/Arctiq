@@ -1,1 +1,1 @@
-# ColdSense — backend services package
+# Arctiq — backend services package

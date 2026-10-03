@@ -1,5 +1,5 @@
 """
-ColdSense — Compressor Health Simulator
+Arctiq — Compressor Health Simulator
 ========================================
 Simulates compressor operating conditions and calculates a health score
 derived from an Arrhenius-based temperature-dependent degradation model

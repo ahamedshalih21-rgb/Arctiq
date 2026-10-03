@@ -1,5 +1,5 @@
 """
-ColdSense — PyTorch LSTM Spoilage Prediction Model Training
+Arctiq — PyTorch LSTM Spoilage Prediction Model Training
 ===========================================================
 Architecture:
   - Input: 360 timesteps (6 hours at 1-minute resolution) x 10 features
@@ -13,7 +13,7 @@ Risk Classification Layer (Deterministic):
   - <= 12 hours   -> HIGH RISK (12-hour intervention window)
 
 Saves:
-  - model/saved_model/coldsense_lstm.pt (PyTorch state dict & model spec)
+  - model/saved_model/arctiq_lstm.pt (PyTorch state dict & model spec)
   - model/saved_model/scaler.joblib (Fitted StandardScaler for 10 features)
   - model/saved_model/metrics.json (Evaluation performance)
   - model/plots/loss_curve.png, sample_predictions.png
@@ -66,7 +66,7 @@ def hours_to_risk(hours: float) -> str:
 
 
 # ── PyTorch LSTM Architecture ─────────────────────────────────────────────────
-class ColdSenseLSTM(nn.Module):
+class ArctiqLSTM(nn.Module):
     def __init__(self, input_dim: int = 10, hidden_dim: int = 64, num_layers: int = 2, dropout: float = 0.2):
         super().__init__()
         self.input_dim = input_dim
@@ -153,7 +153,7 @@ def load_and_preprocess_data():
 
 
 # ── Training Loop ─────────────────────────────────────────────────────────────
-def train_coldsense_lstm():
+def train_arctiq_lstm():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nUsing compute device: {device}")
 
@@ -165,7 +165,7 @@ def train_coldsense_lstm():
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    model = ColdSenseLSTM(input_dim=NUM_FEATURES, hidden_dim=64, num_layers=2, dropout=0.2).to(device)
+    model = ArctiqLSTM(input_dim=NUM_FEATURES, hidden_dim=64, num_layers=2, dropout=0.2).to(device)
     print("\nModel Architecture:")
     print(model)
 
@@ -267,7 +267,7 @@ def train_coldsense_lstm():
     print(classification_report(risk_true, risk_pred))
 
     # Save Model Weights & Metadata
-    model_save_path = os.path.join(MODEL_DIR, "coldsense_lstm.pt")
+    model_save_path = os.path.join(MODEL_DIR, "arctiq_lstm.pt")
     torch.save({
         "model_state_dict": model.state_dict(),
         "input_dim": NUM_FEATURES,
@@ -298,7 +298,7 @@ def train_coldsense_lstm():
     ax.plot(history["val_loss"], label="Val Huber Loss", color="#FF6B6B", linewidth=2, linestyle="--")
     ax.set_xlabel("Epoch", fontsize=12)
     ax.set_ylabel("Loss", fontsize=12)
-    ax.set_title("ColdSense LSTM — Training & Validation Loss", fontsize=14, fontweight="bold")
+    ax.set_title("Arctiq LSTM — Training & Validation Loss", fontsize=14, fontweight="bold")
     ax.legend(fontsize=11)
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
@@ -347,4 +347,4 @@ def train_coldsense_lstm():
 
 
 if __name__ == "__main__":
-    train_coldsense_lstm()
+    train_arctiq_lstm()

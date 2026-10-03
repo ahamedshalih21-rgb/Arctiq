@@ -55,9 +55,9 @@ function buildWhatsAppMessage(rec, allRecs) {
   const isEarlyWarning = ['EARLY_WARNING', 'WATCH', 'MONITOR', 'SAFE'].includes(rec.warning_stage);
   const isCritical     = ['CRITICAL', 'HIGH_RISK'].includes(rec.warning_stage);
 
-  let header = 'ColdSense SmartSell Alert';
-  if (isCritical)     header = 'ColdSense Critical SmartSell Alert';
-  if (isEarlyWarning) header = 'ColdSense Early Warning Alert';
+  let header = 'Arctiq SmartSell Alert';
+  if (isCritical)     header = 'Arctiq Critical SmartSell Alert';
+  if (isEarlyWarning) header = 'Arctiq Early Warning Alert';
 
   const lines = [
     header,
@@ -113,7 +113,7 @@ function buildWhatsAppMessage(rec, allRecs) {
   }
 
   lines.push('');
-  lines.push('Sent via ColdSense Smart Inventory System.');
+  lines.push('Sent via Arctiq Smart Inventory System.');
 
   return lines.join('\n');
 }

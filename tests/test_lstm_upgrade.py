@@ -1,5 +1,5 @@
 """
-Automated Verification Suite for ColdSense LSTM Upgrade
+Automated Verification Suite for Arctiq LSTM Upgrade
 ======================================================
 Tests:
   1. Mendeley dataset calibration & reference files
@@ -23,7 +23,7 @@ sys.path.insert(0, BACKEND_DIR)
 sys.path.insert(0, ROOT_DIR)
 
 from simulator import simulator, PRODUCE_CONFIGS, CANONICAL_KEYS
-from predictor import predictor, hours_to_risk, ColdSenseLSTM
+from predictor import predictor, hours_to_risk, ArctiqLSTM
 from services.early_warning_service import determine_operational_state, assess_early_warning
 from services.notification_service import notification_service, WARNING_SEVERITY
 
@@ -189,7 +189,7 @@ async def test_notification_debouncing():
 def run_all_tests():
     import asyncio
     print("=" * 60)
-    print("Running ColdSense LSTM Automated Test Suite...")
+    print("Running Arctiq LSTM Automated Test Suite...")
     print("=" * 60)
 
     tests = [

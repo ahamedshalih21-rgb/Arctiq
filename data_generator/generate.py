@@ -1,5 +1,5 @@
 """
-ColdSense — Synthetic Data Generator Calibrated on Mendeley Reference Data
+Arctiq — Synthetic Data Generator Calibrated on Mendeley Reference Data
 ==========================================================================
 Reference Dataset:
   "A Real-Time Shelf-Life Estimation Model"
@@ -10,7 +10,7 @@ Products:
   1: Tomato     (optimal 12–15°C, target 13°C, baseline shelf-life 360h / 15 days, chilling-sensitive)
   2: Strawberry (optimal 0–4°C, target 1.5°C, baseline shelf-life 192h / 8 days, Mendeley fruit baseline)
 
-ColdSense 10-Feature Conceptual Sequence:
+Arctiq 10-Feature Conceptual Sequence:
   1. temperature
   2. humidity
   3. door_event
@@ -219,7 +219,7 @@ def generate_single_batch(
 
     humidity = np.clip(humidity + np.random.normal(0, 1.2, n_minutes), 50.0, 99.0)
 
-    # 5. ColdSense 10-Feature Computation (Strictly Causal / No Lookahead)
+    # 5. Arctiq 10-Feature Computation (Strictly Causal / No Lookahead)
     batch_age_hours = delay_hours + prior_hours + (np.arange(n_minutes) / 60.0)
     hours_in_cold_storage = prior_hours + (np.arange(n_minutes) / 60.0)
 
@@ -282,7 +282,7 @@ def generate_single_batch(
 
 def build_full_dataset():
     print("=" * 70)
-    print("ColdSense 10-Feature Sequence Dataset Generator")
+    print("Arctiq 10-Feature Sequence Dataset Generator")
     print("Empirically Grounded in Mendeley Dataset (DOI: 10.17632/kphtgxn3ff.4)")
     print("=" * 70)
 

@@ -1,5 +1,5 @@
 """
-ColdSense — SmartSell Decision Engine
+Arctiq — SmartSell Decision Engine
 =======================================
 Calculates sell priority scores and dynamic pricing recommendations for
 produce batches based on spoilage risk, inventory exposure, demand, and

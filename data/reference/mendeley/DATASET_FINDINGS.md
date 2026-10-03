@@ -1,4 +1,4 @@
-# Mendeley Reference Dataset Findings & ColdSense Calibration Note
+# Mendeley Reference Dataset Findings & Arctiq Calibration Note
 
 **Dataset Source**: A Real-Time Shelf-Life Estimation Model  
 **Authors**: Arwa Abougharib, Mahmoud Awad (2023)  
@@ -51,11 +51,11 @@ The Mendeley repository contains 37 files. The primary data and configuration fi
 3. **Thermal Rise & Infiltration Dynamics**:
    - Refrigerator warming slope on cooling faults calibrated to $CDTRR = 0.125^\circ\text{C/min}$ and asymptotic convergence toward ambient $T_{out} = 24.04^\circ\text{C}$.
 
-### Category C: ColdSense-Simulated Features (Transparently Generated)
-1. **Relative Humidity (%)**: Not logged in Mendeley (manual assumed default 95%). ColdSense generates realistic RH profiles: 90–97% normal, dropping during door openings to 60–75%.
+### Category C: Arctiq-Simulated Features (Transparently Generated)
+1. **Relative Humidity (%)**: Not logged in Mendeley (manual assumed default 95%). Arctiq generates realistic RH profiles: 90–97% normal, dropping during door openings to 60–75%.
 2. **Per-Minute Door Opening Indicator (`door_open`)**: Synthesized binary indicator matching thermal spikes.
 3. **Pre-Cooling & Harvest Metadata**: `batch_picked_temperature` (20–28°C), `delay_before_cold_storage` (1–4 hours), `batch_age_hours`.
-4. **10 ColdSense Sequence Features**:
+4. **10 Arctiq Sequence Features**:
    - `temperature`
    - `humidity`
    - `door_open`
@@ -72,4 +72,4 @@ The Mendeley repository contains 37 files. The primary data and configuration fi
 ---
 
 ## 3. Scientific Limitation & Decision Support Disclaimer
-ColdSense provides operational decision support based on temperature histories and kinetic respiration models. It does not claim to measure the exact cellular biological state in situ without destructive biochemical testing.
+Arctiq provides operational decision support based on temperature histories and kinetic respiration models. It does not claim to measure the exact cellular biological state in situ without destructive biochemical testing.

@@ -1,5 +1,5 @@
 """
-ColdSense — Early Warning Service
+Arctiq — Early Warning Service
 ===================================
 Implements a two-stage spoilage warning system on top of the existing PyTorch LSTM model.
 

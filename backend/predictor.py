@@ -1,7 +1,7 @@
 """
-ColdSense — Model Predictor (PyTorch LSTM)
+Arctiq — Model Predictor (PyTorch LSTM)
 ==========================================
-Loads the pre-trained ColdSense PyTorch LSTM model and StandardScaler at startup.
+Loads the pre-trained Arctiq PyTorch LSTM model and StandardScaler at startup.
 Inference receives a 360-timestep sequence of 10 features:
   1. temperature
   2. humidity
@@ -30,7 +30,7 @@ import torch
 import torch.nn as nn
 
 MODEL_DIR          = os.path.join(os.path.dirname(__file__), "..", "model", "saved_model")
-LSTM_PATH          = os.path.join(MODEL_DIR, "coldsense_lstm.pt")
+LSTM_PATH          = os.path.join(MODEL_DIR, "arctiq_lstm.pt")
 SCALER_PATH        = os.path.join(MODEL_DIR, "scaler.joblib")
 SCALER_PARAMS_PATH = os.path.join(MODEL_DIR, "scaler_params.json")
 METRICS_PATH       = os.path.join(MODEL_DIR, "metrics.json")
@@ -63,7 +63,7 @@ def hours_to_risk(hours: float) -> str:
 
 
 # ── PyTorch LSTM Model Architecture ───────────────────────────────────────────
-class ColdSenseLSTM(nn.Module):
+class ArctiqLSTM(nn.Module):
     def __init__(self, input_dim: int = 10, hidden_dim: int = 64, num_layers: int = 2, dropout: float = 0.2):
         super().__init__()
         self.lstm = nn.LSTM(
@@ -90,10 +90,10 @@ class ColdSenseLSTM(nn.Module):
         return out.squeeze(-1)
 
 
-# ── ColdSensePredictor ────────────────────────────────────────────────────────
-class ColdSensePredictor:
+# ── ArctiqPredictor ────────────────────────────────────────────────────────────
+class ArctiqPredictor:
     def __init__(self):
-        self.model: Optional[ColdSenseLSTM] = None
+        self.model: Optional[ArctiqLSTM] = None
         self.scaler = None
         self.scaler_params = {}
         self.metrics = {}
@@ -119,7 +119,7 @@ class ColdSensePredictor:
 
         # Load checkpoint
         checkpoint = torch.load(LSTM_PATH, map_location=self.device, weights_only=False)
-        self.model = ColdSenseLSTM(
+        self.model = ArctiqLSTM(
             input_dim=checkpoint.get("input_dim", 10),
             hidden_dim=checkpoint.get("hidden_dim", 64),
             num_layers=checkpoint.get("num_layers", 2),
@@ -297,4 +297,4 @@ class ColdSensePredictor:
 
 
 # Singleton
-predictor = ColdSensePredictor()
+predictor = ArctiqPredictor()

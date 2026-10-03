@@ -1,5 +1,5 @@
 """
-ColdSense — Telegram Notification Service
+Arctiq — Telegram Notification Service
 ===========================================
 Dedicated Telegram alert notification service for cold storage monitoring.
 Supports:
@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 # Load local environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
-logger = logging.getLogger("coldsense.notifications")
+logger = logging.getLogger("arctiq.notifications")
 
 # ── Warning Severity Hierarchy ────────────────────────────────────────────────
 WARNING_SEVERITY: Dict[str, int] = {
@@ -58,7 +58,7 @@ def build_alert_message(recommendation: dict, warning_stage: str) -> str:
 
     if warning_stage == "EARLY_WARNING":
         return (
-            "⚠️ <b>COLD SENSE EARLY WARNING</b>\n\n"
+            "⚠️ <b>ARCTIQ EARLY WARNING</b>\n\n"
             f"<b>Product:</b> {product}\n"
             f"<b>Batch:</b> {batch_id}\n\n"
             "<b>Projected Risk Horizon:</b>\n"
@@ -71,7 +71,7 @@ def build_alert_message(recommendation: dict, warning_stage: str) -> str:
 
     elif warning_stage == "HIGH_RISK":
         return (
-            "⚠️ <b>COLD SENSE HIGH RISK ALERT</b>\n\n"
+            "⚠️ <b>ARCTIQ HIGH RISK ALERT</b>\n\n"
             f"<b>Product:</b> {product}\n"
             f"<b>Batch:</b> {batch_id}\n\n"
             "<b>Model Hours Remaining:</b>\n"
@@ -86,7 +86,7 @@ def build_alert_message(recommendation: dict, warning_stage: str) -> str:
 
     elif warning_stage == "CRITICAL":
         return (
-            "🚨 <b>COLD SENSE CRITICAL ALERT</b>\n\n"
+            "🚨 <b>ARCTIQ CRITICAL ALERT</b>\n\n"
             "<b>ACTION: SELL NOW</b>\n\n"
             f"<b>Product:</b> {product}\n"
             f"<b>Batch:</b> {batch_id}\n\n"
@@ -109,7 +109,7 @@ def build_alert_message(recommendation: dict, warning_stage: str) -> str:
     elif warning_stage == "SPOILED":
         val_affected = quantity * mkt_price
         return (
-            "☠️ <b>COLD SENSE SPOILAGE ALERT</b>\n\n"
+            "☠️ <b>ARCTIQ SPOILAGE ALERT</b>\n\n"
             f"<b>Product:</b> {product}\n"
             f"<b>Batch:</b> {batch_id}\n\n"
             "<b>Status:</b> SPOILED\n\n"
@@ -121,7 +121,7 @@ def build_alert_message(recommendation: dict, warning_stage: str) -> str:
 
     else:
         return (
-            "ℹ️ <b>COLD SENSE STATUS UPDATE</b>\n\n"
+            "ℹ️ <b>ARCTIQ STATUS UPDATE</b>\n\n"
             f"<b>Product:</b> {product}\n"
             f"<b>Batch:</b> {batch_id}\n"
             f"<b>Stage:</b> {warning_stage}\n"
@@ -244,10 +244,10 @@ class TelegramNotificationService:
     async def send_test_message(self) -> dict:
         """Send a standard verification message to test Telegram setup."""
         test_text = (
-            "🚀 <b>COLD SENSE TEST ALERT</b>\n\n"
+            "🚀 <b>ARCTIQ TEST ALERT</b>\n\n"
             "Telegram automatic notification system is working correctly.\n"
             f"<b>Timestamp:</b> {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}\n"
-            "<b>System:</b> ColdSense Smart Inventory Decision Engine"
+            "<b>System:</b> Arctiq Smart Inventory Decision Engine"
         )
         return await self.send_message(test_text)
 
