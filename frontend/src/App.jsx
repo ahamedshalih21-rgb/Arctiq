@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './index.css';
+import EnergyPanel from './components/EnergyPanel';
 import SensorChart from './components/SensorChart';
 import RiskBadge from './components/RiskBadge';
 import ValueMetric from './components/ValueMetric';
@@ -141,6 +142,25 @@ function useSmartSell() {
   return { recommendations, ssLoading, fetchSmartSell };
 }
 
+/* ─── Energy data hook ────────────────────────────────────────────────────────── */
+function useEnergy() {
+  const [energyData, setEnergyData] = useState(null);
+
+  const fetchEnergy = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/power`);
+      if (res.ok) {
+        const data = await res.json();
+        setEnergyData(data);
+      }
+    } catch (_) {
+      // Non-critical: EnergyPanel has graceful calculation fallback
+    }
+  }, []);
+
+  return { energyData, fetchEnergy };
+}
+
 /* ─── Unified Inventory Row ─────────────────────────────────────────────────── */
 const STAGE_COLOR_MAP = {
   LOW:           'var(--risk-safe)',
@@ -228,6 +248,7 @@ export default function App() {
   const [activeProduce, setActiveProduce] = useState('spinach');
   const { readings, predictions, history, lastUpdated, error, connected, fetchAll } = useArctiq();
   const { compressor, fetchCompressor } = useCompressor();
+  const { energyData, fetchEnergy } = useEnergy();
   const { listings, buyers, fetchRecovery } = useRecovery();
   const { recommendations, ssLoading, fetchSmartSell } = useSmartSell();
   const intervalRef = useRef(null);
@@ -236,9 +257,10 @@ export default function App() {
   const poll = useCallback(() => {
     fetchAll(activeProduce);
     fetchCompressor();
+    fetchEnergy();
     fetchRecovery();
     fetchSmartSell();
-  }, [fetchAll, activeProduce, fetchCompressor, fetchRecovery, fetchSmartSell]);
+  }, [fetchAll, activeProduce, fetchCompressor, fetchEnergy, fetchRecovery, fetchSmartSell]);
 
   useEffect(() => {
     poll();
@@ -311,48 +333,23 @@ export default function App() {
       {!error && (
         <main className="main-layout">
 
-          {/* LEFT PANEL */}
-          <aside className="left-panel">
+          {/* ── 1. MAIN HERO SECTION (Left/Center, grid-column: 1 / 3): Energy Consumption & Optimization ── */}
+          <section className="energy-section" aria-label="Energy Consumption & Optimization">
+            <EnergyPanel
+              energyData={energyData}
+              compressorData={compressor}
+            />
 
-            {/* ── Unified Cold Storage Inventory ── */}
-            <div className="hmi-card">
-              <div className="hmi-section-title">Cold Storage Inventory</div>
-              <div className="inv-list">
-                {PRODUCE_ORDER.map(pt => (
-                  <InventoryBatchCard
-                    key={pt}
-                    pt={pt}
-                    predictions={predictions}
-                    readings={readings}
-                    ssRec={ssMap[pt]}
-                    isActive={pt === activeProduce}
-                    onSelect={setActiveProduce}
-                  />
-                ))}
-              </div>
-              <div className="inv-note">
-                Select a batch above for live telemetry. Model Hrs = PyTorch LSTM (360-min window). Proj. Hrs = trend estimate.
-              </div>
-            </div>
-
-            {/* Compressor Health — simplified */}
-            <CompressorHealth data={compressor} />
-
-          </aside>
-
-          {/* CENTER PANEL */}
-          <section className="center-panel" aria-label="Sensor readings and recommendations">
-
-            {/* Telemetry tiles */}
+            {/* Chamber Telemetry Tiles */}
             <div className="readings-row">
               <div className="reading-card temp-card">
                 <div className="reading-label">Temperature</div>
                 <div className="reading-value temp">
                   {activeReading.temperature?.toFixed(1) ?? '--'}
-                  <span className="reading-unit"> C</span>
+                  <span className="reading-unit"> °C</span>
                 </div>
                 <div className="reading-sub">
-                  Ideal {PRODUCE_CONFIG[activeProduce].ideal_temp} C
+                  Ideal {PRODUCE_CONFIG[activeProduce].ideal_temp} °C
                 </div>
               </div>
 
@@ -378,42 +375,74 @@ export default function App() {
               </div>
             </div>
 
-            {/* Trend chart */}
+            {/* Sensor Trend Chart */}
             <SensorChart
               history={activeHistory}
               produceConfig={PRODUCE_CONFIG[activeProduce]}
             />
 
-            {/* SmartSell Panel */}
+            {/* Dynamic Pricing / SmartSell Panel */}
             <SmartSellPanel
               recommendations={recommendations}
               loading={ssLoading && recommendations.length === 0}
             />
 
-            {/* Recovery Exchange */}
+            {/* Risk Stock Recovery Exchange */}
             <RecoveryExchange
               listings={listings}
               buyers={buyers}
             />
-
           </section>
 
-          {/* RIGHT PANEL */}
-          <aside className="right-panel" aria-label="Prediction and controls">
+          {/* ── 2. SECONDARY SECTION (Right, Medium, grid-column: 3 / 4): Spoilage Risk & Produce Status ── */}
+          <aside className="spoilage-section" aria-label="Spoilage Risk & Produce Status">
+            {/* Unified Cold Storage Inventory / Produce Batches */}
+            <div className="hmi-card">
+              <div className="hmi-section-title">Produce Batches & Shelf Life</div>
+              <div className="inv-list">
+                {PRODUCE_ORDER.map(pt => (
+                  <InventoryBatchCard
+                    key={pt}
+                    pt={pt}
+                    predictions={predictions}
+                    readings={readings}
+                    ssRec={ssMap[pt]}
+                    isActive={pt === activeProduce}
+                    onSelect={setActiveProduce}
+                  />
+                ))}
+              </div>
+              <div className="inv-note">
+                PyTorch LSTM model (360-min window). Click batch for live chamber telemetry.
+              </div>
+            </div>
+
+            {/* Active Produce Risk Badge */}
             <RiskBadge prediction={activePred} />
+
+            {/* Financial Value Metric */}
             <ValueMetric value={activePred.value} />
+
+            {/* Batch Cards */}
             <BatchCard metadata={{
               ...activeReading,
               display_name:    PRODUCE_CONFIG[activeProduce].display_name,
               batch_weight_kg: BATCH_META[activeProduce].batch_weight_kg,
               value_per_kg:    BATCH_META[activeProduce].value_per_kg,
             }} />
+
+            {/* Fault Control */}
             <FaultControl
               activeProduce={activeProduce}
               allMeta={readings}
               onFaultTriggered={handleFaultTriggered}
             />
           </aside>
+
+          {/* ── 3. BOTTOM SECTION (Full Width, grid-column: 1 / -1): Compressor Health Score ── */}
+          <section className="compressor-section" aria-label="Compressor Health Analytics">
+            <CompressorHealth data={compressor} />
+          </section>
 
         </main>
       )}

@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 import time
+import math
 import logging
 
 from simulator import simulator, PRODUCE_CONFIGS
@@ -438,6 +439,86 @@ def get_compressor_health():
     """
     _sync_compressor_context()
     return compressor_sim.get_status()
+
+
+# ── Energy Consumption & Optimization ──────────────────────────────────────────
+
+@app.get("/api/power")
+def get_power_consumption():
+    """
+    Real-time energy consumption and optimization metrics.
+    Compares Arctiq AI-modulated cooling against fixed-thermostat baseline (2.5 kW).
+    Electricity tariff rate: ₹8.0 / kWh (typical Indian commercial cold storage rate).
+    """
+    _sync_compressor_context()
+    c_status = compressor_sim.get_status()
+    readings = simulator.get_readings()
+
+    # Fixed thermostat cold room baseline: 2.5 kW nominal constant
+    baseline_kw = 2.5
+
+    any_fault = any(r.get("fault_active", False) for r in readings.values())
+    temps = [r.get("temperature", 4.0) for r in readings.values() if r]
+    avg_temp = sum(temps) / len(temps) if temps else 4.0
+    door_open = any(r.get("door_open_event", 0) == 1 for r in readings.values())
+
+    duty_cycle = c_status.get("duty_cycle", 55.0) / 100.0
+    is_running = c_status.get("compressor_current", 0.0) > 1.0
+
+    thermal_load_factor = max(0.8, min(1.6, 1.0 + (avg_temp - 3.0) * 0.08 + (0.35 if any_fault else 0.0) + (0.20 if door_open else 0.0)))
+
+    if is_running:
+        current_kw = round(1.25 * thermal_load_factor + (duty_cycle * 0.35), 2)
+    else:
+        current_kw = round(0.18 * thermal_load_factor, 2)
+    current_kw = max(0.18, min(2.8, current_kw))
+
+    effective_daily_kw = round(duty_cycle * 1.55 * thermal_load_factor + (1.0 - duty_cycle) * 0.18, 2)
+    energy_saved_pct = round(max(0.0, ((baseline_kw - effective_daily_kw) / baseline_kw) * 100.0), 1)
+
+    daily_kwh_baseline = round(baseline_kw * 24.0, 1)
+    daily_kwh_actual = round(effective_daily_kw * 24.0, 1)
+    daily_kwh_saved = round(max(0.0, daily_kwh_baseline - daily_kwh_actual), 1)
+
+    electricity_rate_inr = 8.0
+    daily_cost_saved_inr = round(daily_kwh_saved * electricity_rate_inr, 2)
+    monthly_cost_saved_inr = round(daily_cost_saved_inr * 30.0, 2)
+
+    now = time.time()
+    trend_24h = []
+    for i in range(24, 0, -1):
+        t_hour = (int(now / 3600) - i) % 24
+        hour_label = f"{t_hour:02d}:00"
+        diurnal_factor = 1.0 + 0.12 * math.sin((t_hour - 8) * math.pi / 12)
+        b_power = round(baseline_kw * (0.95 + 0.08 * math.sin((t_hour - 6) * math.pi / 12)), 2)
+        a_power = round(effective_daily_kw * diurnal_factor + 0.06 * math.sin(i * 1.7), 2)
+        a_power = max(0.25, min(b_power - 0.2, a_power))
+        saved_kw = round(max(0.0, b_power - a_power), 2)
+        trend_24h.append({
+            "hour": hour_label,
+            "baseline_kw": b_power,
+            "actual_kw": a_power,
+            "saved_kw": saved_kw,
+            "saved_cost_inr": round(saved_kw * electricity_rate_inr, 2),
+        })
+
+    return {
+        "current_power_kw": current_kw,
+        "effective_power_kw": effective_daily_kw,
+        "baseline_kw": baseline_kw,
+        "energy_saved_pct": energy_saved_pct,
+        "duty_cycle_pct": round(duty_cycle * 100.0, 1),
+        "compressor_is_running": is_running,
+        "daily_kwh_baseline": daily_kwh_baseline,
+        "daily_kwh_actual": daily_kwh_actual,
+        "daily_kwh_saved": daily_kwh_saved,
+        "electricity_rate_inr_per_kwh": electricity_rate_inr,
+        "daily_cost_saved_inr": daily_cost_saved_inr,
+        "monthly_cost_saved_inr": monthly_cost_saved_inr,
+        "optimization_mode": "Kinetic Demand Modulation (Active)",
+        "cop_estimated": round(3.8 + (1.0 - duty_cycle) * 0.6, 2),
+        "trend_24h": trend_24h,
+    }
 
 
 # ── Risk Stock / Recovery Exchange ────────────────────────────────────────────

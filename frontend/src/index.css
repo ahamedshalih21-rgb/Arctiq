@@ -227,7 +227,7 @@ body {
 /* ── Main Layout ───────────────────────────────────────────────────────────── */
 .main-layout {
   display: grid;
-  grid-template-columns: 320px 1fr 296px;
+  grid-template-columns: 1fr 1fr 380px;
   gap: var(--space-6);
   padding: var(--space-6);
   flex: 1;
@@ -235,8 +235,32 @@ body {
   align-items: start;
 }
 
-/* ── Left Panel ────────────────────────────────────────────────────────────── */
-.left-panel {
+/* ── Primary Energy Section (Hero, Left/Center 60-70% width) ──────────────── */
+.energy-section {
+  grid-column: 1 / 3;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+/* ── Secondary Spoilage Section (Right 30-40% width) ─────────────────────── */
+.spoilage-section {
+  grid-column: 3 / 4;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* ── Bottom Compressor Section (Full Width) ───────────────────────────────── */
+.compressor-section {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+/* Legacy alias panel classes */
+.left-panel, .center-panel, .right-panel {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -1490,4 +1514,879 @@ body {
 .risk-badge.HighRisk .risk-dot {
   animation: blink-crit 1.5s step-start infinite;
 }
+
+/* ═══════════════════════════════════════════════════════
+   HERO: ENERGY CONSUMPTION & OPTIMIZATION PANEL
+   ═══════════════════════════════════════════════════════ */
+
+.energy-hero-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.energy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-divider);
+  background: linear-gradient(180deg, rgba(79, 182, 201, 0.06) 0%, transparent 100%);
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.energy-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.energy-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.energy-badge-icon {
+  font-size: 1.3rem;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: rgba(79, 182, 201, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+  box-shadow: 0 0 12px rgba(79, 182, 201, 0.20);
+}
+
+.energy-title {
+  font-size: 1.12rem;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+.energy-subtitle {
+  font-size: 0.70rem;
+  color: var(--color-neutral-400);
+  margin-top: 2px;
+}
+
+.energy-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.energy-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-accent);
+  background: rgba(79, 182, 201, 0.10);
+  border: 1px solid rgba(79, 182, 201, 0.28);
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+.energy-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent);
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+.tariff-pill {
+  font-size: 0.68rem;
+  color: var(--color-neutral-400);
+  background: var(--color-neutral-900);
+  border: 1px solid var(--color-divider);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+}
+
+/* ── Energy 4-KPI Grid ─────────────────────────────────────────────────────── */
+.energy-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+.energy-kpi-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.energy-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.energy-kpi-card.highlight-cyan:hover  { border-color: var(--color-accent); }
+.energy-kpi-card.highlight-green:hover { border-color: var(--risk-safe); }
+.energy-kpi-card.highlight-blue:hover  { border-color: #60A5FA; }
+.energy-kpi-card.highlight-amber:hover { border-color: #FBBF24; }
+
+.ekpi-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ekpi-label {
+  font-size: 0.60rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-neutral-400);
+}
+
+.ekpi-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 2px 0;
+}
+
+.ekpi-symbol {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-right: 2px;
+}
+
+.ekpi-value {
+  font-size: 1.85rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.ekpi-unit {
+  font-size: 0.80rem;
+  font-weight: 500;
+  color: var(--color-neutral-400);
+}
+
+.text-safe { color: var(--risk-safe) !important; }
+.text-amber { color: #FBBF24 !important; }
+.text-cyan { color: var(--color-accent) !important; }
+
+.ekpi-comparison {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  min-height: 18px;
+}
+
+.ekpi-diff.negative {
+  color: var(--risk-safe);
+  font-weight: 600;
+  background: rgba(74, 222, 128, 0.12);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+}
+
+.ekpi-vs {
+  color: var(--color-neutral-600);
+}
+
+.ekpi-sub-highlight {
+  font-weight: 600;
+  color: var(--color-neutral-100);
+}
+
+.ekpi-bar-track {
+  width: 100%;
+  height: 4px;
+  background: var(--color-surface);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.ekpi-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.ekpi-bar-fill.cyan  { background: var(--color-accent); }
+.ekpi-bar-fill.green { background: var(--risk-safe); }
+.ekpi-bar-fill.blue  { background: #60A5FA; }
+.ekpi-bar-fill.amber { background: #FBBF24; }
+
+.ekpi-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.ekpi-status-dot.running {
+  background: var(--color-accent);
+  box-shadow: 0 0 8px rgba(79, 182, 201, 0.8);
+}
+
+.ekpi-status-dot.idle {
+  background: var(--color-neutral-600);
+}
+
+.ekpi-pill {
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.05em;
+}
+
+.ekpi-pill.safe  { background: rgba(74, 222, 128, 0.12); color: var(--risk-safe); }
+.ekpi-pill.info  { background: rgba(96, 165, 250, 0.12); color: #60A5FA; }
+.ekpi-pill.rupee { background: rgba(251, 191, 36, 0.12); color: #FBBF24; }
+
+/* ── Energy Chart Section ─────────────────────────────────────────────────── */
+.energy-chart-section {
+  padding: 0 var(--space-6) var(--space-6) var(--space-6);
+}
+
+.energy-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-divider);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.energy-chart-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.energy-chart-desc {
+  font-size: 0.68rem;
+  color: var(--color-neutral-400);
+  margin-top: 2px;
+}
+
+.chart-mode-toggles {
+  display: flex;
+  gap: 4px;
+  background: var(--color-bg);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-divider);
+}
+
+.cmt-btn {
+  padding: 4px 10px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--color-neutral-400);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+}
+
+.cmt-btn.active {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+.energy-chart-wrapper {
+  margin: var(--space-2) 0;
+}
+
+.energy-chart-tooltip {
+  background: rgba(22, 24, 38, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-neutral-800);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  font-size: 0.70rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ect-header {
+  font-weight: 600;
+  color: var(--color-neutral-400);
+  border-bottom: 1px solid var(--color-divider);
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.ect-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-neutral-300);
+}
+
+.ect-row strong {
+  margin-left: auto;
+  font-family: var(--font-mono);
+}
+
+.ect-row.highlight {
+  border-top: 1px dashed var(--color-divider);
+  padding-top: 4px;
+  margin-top: 2px;
+}
+
+.ect-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.energy-chart-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-divider);
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.ec-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: 0.68rem;
+  color: var(--color-neutral-400);
+}
+
+.ecl-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ecl-line {
+  width: 14px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.ecl-line.cyan { background: var(--color-accent); }
+.ecl-line.red.dashed {
+  background: #F87171;
+  border-bottom: 1px dashed #F87171;
+}
+
+.ecl-badge.safe {
+  font-size: 0.60rem;
+  font-weight: 600;
+  background: rgba(74, 222, 128, 0.12);
+  color: var(--risk-safe);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.ec-stats-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.68rem;
+}
+
+.ecs-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ecs-lbl { color: var(--color-neutral-600); }
+.ecs-val { font-weight: 600; }
+.ecs-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--color-divider);
+}
+
+/* ═══════════════════════════════════════════════════════
+   BOTTOM SECTION: COMPRESSOR HEALTH & ARRHENIUS DEGRADATION
+   ═══════════════════════════════════════════════════════ */
+
+.compressor-hero-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  width: 100%;
+}
+
+.comp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-divider);
+  background: linear-gradient(180deg, rgba(79, 182, 201, 0.05) 0%, transparent 100%);
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.comp-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.comp-icon {
+  font-size: 1.3rem;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(79, 182, 201, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.comp-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+.comp-subtitle {
+  font-size: 0.68rem;
+  color: var(--color-neutral-400);
+  margin-top: 2px;
+}
+
+.comp-header-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.comp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+}
+
+.comp-status-badge.safe {
+  color: var(--risk-safe);
+  background: var(--risk-safe-bg);
+  border-color: var(--risk-safe-border);
+}
+.comp-status-badge.watch {
+  color: var(--risk-watch);
+  background: var(--risk-watch-bg);
+  border-color: var(--risk-watch-border);
+}
+.comp-status-badge.critical {
+  color: var(--risk-critical);
+  background: var(--risk-critical-bg);
+  border-color: var(--risk-critical-border);
+}
+
+.comp-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.demo-pill {
+  font-size: 0.60rem;
+  font-weight: 600;
+  color: var(--color-neutral-400);
+  background: var(--color-neutral-900);
+  border: 1px solid var(--color-divider);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.05em;
+}
+
+/* ── Compressor 4-Column Diagnostic Grid ───────────────────────────────────── */
+.comp-content-grid {
+  display: grid;
+  grid-template-columns: 210px 1.4fr 1.3fr 1.1fr;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  align-items: stretch;
+}
+
+.gauge-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-neutral-400);
+  margin-bottom: var(--space-3);
+}
+
+/* Col 1: Health Gauge */
+.comp-gauge-col {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-divider);
+  padding-right: var(--space-4);
+}
+
+.gauge-container {
+  position: relative;
+  width: 160px;
+  height: 95px;
+  margin: 0 auto;
+}
+
+.gauge-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.gauge-center-text {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gauge-score-num {
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+
+.gauge-score-denom {
+  font-size: 0.65rem;
+  color: var(--color-neutral-600);
+}
+
+.gauge-sub-info {
+  margin-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.68rem;
+  color: var(--color-neutral-400);
+}
+
+.gsi-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Col 2: Degradation Trend */
+.comp-trend-col {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-divider);
+  padding-right: var(--space-4);
+}
+
+.trend-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.trend-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.70rem;
+}
+
+.trend-step.current {
+  background: rgba(79, 182, 201, 0.08);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(79, 182, 201, 0.25);
+}
+
+.ts-marker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ts-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+}
+
+.ts-line {
+  position: absolute;
+  top: 9px;
+  width: 2px;
+  height: 12px;
+  background: var(--color-divider);
+}
+
+.ts-info {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.ts-name { color: var(--color-neutral-400); }
+.ts-val  { font-family: var(--font-mono); font-weight: 600; }
+
+/* Col 3: Life Remaining & Threshold */
+.comp-life-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border-right: 1px solid var(--color-divider);
+  padding-right: var(--space-4);
+}
+
+.life-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.life-hero-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.life-num {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--color-text);
+}
+
+.life-unit {
+  font-size: 0.75rem;
+  color: var(--color-neutral-400);
+}
+
+.life-approx {
+  font-size: 0.68rem;
+  color: var(--risk-safe);
+  font-weight: 500;
+}
+
+.threshold-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tc-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.60rem;
+}
+
+.tc-title {
+  color: var(--color-neutral-400);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.tc-bar-track {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: var(--color-bg);
+  border-radius: 4px;
+  display: flex;
+  overflow: visible;
+  border: 1px solid var(--color-divider);
+}
+
+.tc-zone.critical { background: rgba(248, 113, 113, 0.40); }
+.tc-zone.warning  { background: rgba(251, 191, 36, 0.40); }
+.tc-zone.healthy  { background: rgba(74, 222, 128, 0.40); }
+
+.tc-pointer {
+  position: absolute;
+  top: -4px;
+  width: 4px;
+  height: 16px;
+  background: var(--color-text);
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  transform: translateX(-50%);
+  transition: left 0.5s ease;
+}
+
+.tc-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.58rem;
+  color: var(--color-neutral-600);
+  font-family: var(--font-mono);
+}
+
+/* Col 4: Diagnostics Grid */
+.comp-diag-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.diag-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.diag-tile {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dt-lbl {
+  font-size: 0.55rem;
+  color: var(--color-neutral-600);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.dt-val {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--color-text);
+}
+
+.dt-sub {
+  font-size: 0.58rem;
+  color: var(--color-neutral-400);
+}
+
+.diag-note {
+  font-size: 0.62rem;
+  color: var(--color-neutral-600);
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE DESIGN BREAKPOINTS
+   ═══════════════════════════════════════════════════════ */
+
+@media (max-width: 1200px) {
+  .main-layout {
+    grid-template-columns: 1fr 1fr 340px;
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+  .comp-content-grid {
+    grid-template-columns: 180px 1.2fr 1.2fr 1fr;
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+}
+
+@media (max-width: 1040px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  .energy-section,
+  .spoilage-section,
+  .compressor-section {
+    grid-column: 1 / -1 !important;
+  }
+  .energy-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .comp-content-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+  .comp-gauge-col,
+  .comp-trend-col {
+    border-right: none;
+    border-bottom: 1px solid var(--color-divider);
+    padding-bottom: var(--space-4);
+  }
+}
+
+@media (max-width: 640px) {
+  .energy-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .comp-content-grid {
+    grid-template-columns: 1fr;
+  }
+  .comp-life-col {
+    border-right: none;
+    border-bottom: 1px solid var(--color-divider);
+    padding-bottom: var(--space-4);
+  }
+  .readings-row {
+    grid-template-columns: 1fr;
+  }
+  .energy-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 
