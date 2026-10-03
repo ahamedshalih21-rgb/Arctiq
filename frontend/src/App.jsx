@@ -297,6 +297,64 @@ export default function App() {
   const ssMap = {};
   recommendations.forEach(r => { ssMap[r.produce_type] = r; });
 
+  // ── Construct live dashboard telemetry for chatbot ───────────────────────────
+  const comp = compressor || {};
+  const compDuty = energyData?.duty_cycle_pct ?? (comp.duty_cycle != null ? Number(comp.duty_cycle) : 55.0);
+  const compRunning = energyData?.compressor_is_running ?? (comp.compressor_current > 1.0);
+  const currentPowerDraw = energyData?.current_power_kw ?? (compRunning ? Number((1.25 + (compDuty / 100) * 0.35).toFixed(2)) : 0.18);
+  const baselineKw = energyData?.baseline_kw ?? 2.5;
+  const effectiveKw = energyData?.effective_power_kw ?? ((compDuty / 100) * 1.55 + (1 - compDuty / 100) * 0.18);
+  const energySavedToday = energyData?.energy_saved_pct ?? Number(Math.max(0, ((baselineKw - effectiveKw) / baselineKw) * 100).toFixed(1));
+  const energySavedKwh = energyData?.daily_kwh_saved ?? Number(Math.max(0, (baselineKw - effectiveKw) * 24).toFixed(1));
+  const costSavedToday = Number((energySavedKwh * electricityRate).toFixed(2));
+  const monthlyCostSaved = Number((costSavedToday * 30).toFixed(2));
+
+  const compDamage = comp.cumulative_damage != null ? Number(comp.cumulative_damage) : 0.036;
+  const estimatedCompressorLifeRemaining = Math.max(0, Math.round(45000 - compDamage * 45000));
+  const compHealthScore = comp.health_score != null ? Number(comp.health_score).toFixed(1) : '96.4';
+  const compTemp = comp.compressor_temperature != null ? Number(comp.compressor_temperature).toFixed(1) : '48.2';
+  const degradationTrend = comp.health_status === 'Critical' ? 'critical' : (comp.health_status === 'Warning' ? 'degrading' : 'stable');
+
+  const batchData = PRODUCE_ORDER.map(pt => {
+    const pred = predictions[pt] || {};
+    const read = readings[pt] || {};
+    const rec = ssMap[pt] || {};
+    const hrs = pred.remaining_shelf_life_hours != null
+      ? Number(pred.remaining_shelf_life_hours).toFixed(1)
+      : (rec.model_hours_remaining != null ? Number(rec.model_hours_remaining).toFixed(1) : '48.0');
+    return {
+      name: PRODUCE_CONFIG[pt]?.display_name || pt,
+      remainingShelfLife: hrs,
+      riskStatus: pred.risk_status || rec.warning_stage || 'Safe',
+      quantity: BATCH_META[pt]?.batch_weight_kg || 100,
+      price: rec.recommended_price_per_kg || BATCH_META[pt]?.value_per_kg || 50,
+    };
+  });
+
+  const dashboardData = {
+    energy: {
+      currentPowerDraw: currentPowerDraw, // in kW
+      energySavedToday: energySavedToday, // in %
+      energySavedKwh: energySavedKwh, // in kWh
+      costSavedToday: costSavedToday, // in ₹
+      monthlyCostSaved: monthlyCostSaved, // in ₹
+      compressorDutyCycle: Number(compDuty.toFixed(1)), // in %
+    },
+    environment: {
+      temperature: activeReading.temperature != null ? Number(activeReading.temperature.toFixed(1)) : 2.0, // in °C
+      humidity: activeReading.humidity != null ? Number(activeReading.humidity.toFixed(1)) : 95.0, // in %
+      doorStatus: doorOpen ? "OPEN" : "SEALED",
+    },
+    batches: batchData, // array of { name, remainingShelfLife, riskStatus, quantity, price }
+    compressor: {
+      healthScore: compHealthScore, // 0-100
+      temperature: compTemp, // in °C
+      estimatedLifeRemaining: estimatedCompressorLifeRemaining, // in hours
+      degradationTrend: degradationTrend, // "stable", "degrading", "critical"
+      maintenanceAlertThreshold: 40,
+    }
+  };
+
   return (
     <div className="app">
 
@@ -509,6 +567,7 @@ export default function App() {
       {chatbotOpen && (
         <ChatbotPanel
           onClose={() => setChatbotOpen(false)}
+          dashboardData={dashboardData}
         />
       )}
 

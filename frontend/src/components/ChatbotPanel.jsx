@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { askGemini } from '../services/geminiService';
 
-export default function ChatbotPanel({ onClose }) {
+export default function ChatbotPanel({ onClose, dashboardData }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -37,8 +37,8 @@ export default function ChatbotPanel({ onClose }) {
     setLoading(true);
 
     try {
-      // Get Gemini response
-      const response = await askGemini(userMessage);
+      // Get Gemini response with live dashboard telemetry
+      const response = await askGemini(userMessage, dashboardData);
       const respTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       setMessages(prev => [
         ...prev,

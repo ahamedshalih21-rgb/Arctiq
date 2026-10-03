@@ -5,7 +5,7 @@
  * spoilage prediction, energy savings, maintenance, and marketplace recovery.
  */
 
-export async function askGemini(userMessage) {
+export async function askGemini(userMessage, dashboardData = null) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
   if (!apiKey || apiKey === 'your_actual_api_key_here') {
@@ -26,11 +26,37 @@ Your role:
 
 Always respond in simple, farmer-friendly language. Use examples. Provide next steps.`;
 
+  // Build telemetry context from live dashboard data
+  let telemetryContext = '';
+  if (dashboardData) {
+    const energy = dashboardData.energy || {};
+    const env = dashboardData.environment || {};
+    const comp = dashboardData.compressor || {};
+    const batches = dashboardData.batches || [];
+
+    telemetryContext = `
+
+HERE IS THE USER'S CURRENT ARCTIQ SYSTEM DATA (use this to answer their question):
+- Current Power Draw: ${energy.currentPowerDraw ?? '--'} kW
+- Energy Saved Today: ${energy.energySavedToday ?? '--'}% (${energy.energySavedKwh ?? '--'} kWh)
+- Cost Saved Today: ₹${energy.costSavedToday ?? '--'}
+- Monthly Cost Projection: ₹${energy.monthlyCostSaved ?? '--'}
+- Compressor Duty Cycle: ${energy.compressorDutyCycle ?? '--'}%
+- Current Temperature: ${env.temperature ?? '--'}°C (Ideal: 1-5°C)
+- Current Humidity: ${env.humidity ?? '--'}% (Ideal: 90-95%)
+- Door Status: ${env.doorStatus ?? 'SEALED'}
+- Active Batches: ${batches.map(b => `${b.name} (${b.remainingShelfLife}h remaining, Status: ${b.riskStatus})`).join(', ')}
+- Compressor Health Score: ${comp.healthScore ?? '--'}/100
+- Compressor Body Temperature: ${comp.temperature ?? '--'}°C
+- Estimated Compressor Life Remaining: ${comp.estimatedLifeRemaining ?? '--'} hours
+- Compressor Degradation Trend: ${comp.degradationTrend ?? 'stable'}`;
+  }
+
   const requestBody = JSON.stringify({
     contents: [
       {
         parts: [
-          { text: systemPrompt },
+          { text: systemPrompt + telemetryContext },
           { text: userMessage }
         ]
       }
