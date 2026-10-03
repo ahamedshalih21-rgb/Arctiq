@@ -10,6 +10,7 @@ import CompressorHealth from './components/CompressorHealth';
 import RecoveryExchange from './components/RecoveryExchange';
 import SmartSellPanel from './components/SmartSellPanel';
 import RateSettingsModal from './components/RateSettingsModal';
+import ChatbotPanel from './components/ChatbotPanel';
 
 const API_BASE = 'http://localhost:8000';
 const POLL_INTERVAL_MS = 4000;
@@ -252,6 +253,7 @@ export default function App() {
     return saved ? Number(saved) : 8.0;
   });
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
 
   const handleSaveRate = (newRate) => {
     setElectricityRate(newRate);
@@ -313,9 +315,28 @@ export default function App() {
             <div className="live-dot" />
             {connected ? 'LIVE' : 'OFFLINE'}
           </div>
-          <div className="last-updated" aria-label="Last updated">
-            {lastUpdated ? lastUpdated.toLocaleTimeString() : '--:--:--'}
-          </div>
+          <button
+            type="button"
+            className="chatbot-toggle"
+            onClick={() => setChatbotOpen(!chatbotOpen)}
+            title="Ask Arctiq Assistant"
+            aria-label="Open Arctiq AI Assistant"
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="chatbot-toggle-icon"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>Ask Arctiq</span>
+          </button>
         </div>
       </header>
 
@@ -483,6 +504,13 @@ export default function App() {
         currentRate={electricityRate}
         onSaveRate={handleSaveRate}
       />
+
+      {/* Floating Chatbot Panel */}
+      {chatbotOpen && (
+        <ChatbotPanel
+          onClose={() => setChatbotOpen(false)}
+        />
+      )}
 
     </div>
   );
