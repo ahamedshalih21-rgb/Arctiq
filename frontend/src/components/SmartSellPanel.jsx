@@ -1,17 +1,10 @@
 import React, { useState } from 'react';
 
-const WHATSAPP_NUMBER = '916379517373';
-
 /**
  * SmartSellPanel
  * ---------------
- * Displays ranked SmartSell recommendations and provides a WhatsApp sharing button.
+ * Displays ranked SmartSell recommendations based on LSTM spoilage predictions.
  * Follows HMI design language: no emojis, monospace data values, uppercase labels.
- *
- * WhatsApp integration:
- *   Uses wa.me/916379517373?text=<encoded_message> — no API, no Twilio, no backend messaging.
- *   The button opens WhatsApp with a pre-filled message. The user must press Send manually.
- *   The number 916379517373 = India country code (91) + local number (6379517373).
  */
 
 const PRIORITY_COLORS = {
@@ -37,93 +30,6 @@ function fmt(n, decimals = 0) {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
-}
-
-function buildWhatsAppMessage(rec, allRecs) {
-  if (!rec) return '';
-
-  const stageLabel = {
-    CRITICAL:      'CRITICAL — Model-driven action window',
-    HIGH_RISK:     'HIGH RISK — Risk increasing rapidly',
-    EARLY_WARNING: 'EARLY WARNING — Projected risk within ~12h',
-    WATCH:         'WATCH — Monitor closely',
-    MONITOR:       'MONITOR',
-    SAFE:          'SAFE',
-    SPOILED:       'SPOILED',
-  }[rec.warning_stage] || rec.warning_stage;
-
-  const isEarlyWarning = ['EARLY_WARNING', 'WATCH', 'MONITOR', 'SAFE'].includes(rec.warning_stage);
-  const isCritical     = ['CRITICAL', 'HIGH_RISK'].includes(rec.warning_stage);
-
-  let header = 'Arctiq SmartSell Alert';
-  if (isCritical)     header = 'Arctiq Critical SmartSell Alert';
-  if (isEarlyWarning) header = 'Arctiq Early Warning Alert';
-
-  const lines = [
-    header,
-    '---',
-    `Priority Action: ${rec.priority_action}`,
-    `Product: ${rec.display_name}`,
-    `Batch: ${rec.batch_id}`,
-    `Status: ${stageLabel}`,
-    '',
-    `Model-predicted remaining: ${fmt(rec.model_hours_remaining, 1)} hours`,
-    `Projected risk horizon: ~${fmt(rec.projected_risk_horizon_hours, 0)} hours (trend estimate)`,
-    '',
-    `Stock: ${fmt(rec.quantity_kg, 0)} kg`,
-    `Market Price: Rs${fmt(rec.market_price_per_kg, 0)}/kg`,
-    `Purchase Cost: Rs${fmt(rec.purchase_cost_per_kg, 0)}/kg`,
-    `Recommended Price: Rs${fmt(rec.recommended_price_per_kg, 0)}/kg`,
-    `Discount: ${fmt(rec.discount_percent, 1)}%`,
-    `Demand: ${fmt(rec.demand_score, 0)}/100`,
-    `Expected Waste Risk: Rs${fmt(rec.expected_waste_inr, 0)}`,
-    '',
-    `Priority Score: ${fmt(rec.sell_priority_score, 0)}/100`,
-  ];
-
-  if (rec.reason_factors && rec.reason_factors.length > 0) {
-    lines.push('');
-    lines.push('Reasons:');
-    rec.reason_factors.forEach(f => lines.push(`- ${f}`));
-  }
-
-  lines.push('');
-
-  if (isCritical) {
-    lines.push(
-      `Immediate action required. ${rec.display_name} batch ${rec.batch_id} ` +
-      `has reached the critical action window. Prioritize immediate sale.`
-    );
-  } else if (isEarlyWarning) {
-    lines.push(
-      `${rec.display_name} batch ${rec.batch_id} may approach spoilage within ` +
-      `approximately ${fmt(rec.projected_risk_horizon_hours, 0)} hours based on sensor trends. ` +
-      `Prepare this batch for priority sale. Note: this is a trend-based projection, ` +
-      `not the model's validated prediction.`
-    );
-  }
-
-  // Add top 3 summary if multiple recommendations
-  if (allRecs && allRecs.length > 1) {
-    lines.push('');
-    lines.push('All Batches (ranked):');
-    allRecs.slice(0, 3).forEach((r, i) => {
-      lines.push(`${i + 1}. ${r.display_name} — ${r.priority_action} — Score: ${fmt(r.sell_priority_score, 0)}/100`);
-    });
-  }
-
-  lines.push('');
-  lines.push('Sent via Arctiq Smart Inventory System.');
-
-  return lines.join('\n');
-}
-
-function openWhatsApp(rec, allRecs) {
-  if (!rec) return;
-  const message  = buildWhatsAppMessage(rec, allRecs);
-  const encoded  = encodeURIComponent(message);
-  const url      = `https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`;
-  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 /** Single recommendation card (top priority batch) */
@@ -243,25 +149,12 @@ function TopRecommendationCard({ rec, allRecs }) {
       {rec.below_cost_sale && rec.below_cost_reason && (
         <div className="ss-below-cost-note">{rec.below_cost_reason}</div>
       )}
-
-      {/* WhatsApp button */}
-      <div className="ss-action-row">
-        <button
-          id="whatsapp-smartsell-btn"
-          className="ss-whatsapp-btn"
-          onClick={() => openWhatsApp(rec, allRecs)}
-          title="Opens WhatsApp with a pre-filled message. You must press Send manually."
-        >
-          SEND SMARTSELL ALERT ON WHATSAPP
-        </button>
-        <div className="ss-wa-note">Opens WhatsApp. Message is pre-filled. Press Send manually.</div>
-      </div>
     </div>
   );
 }
 
 /** Ranked summary row */
-function RankedRow({ rec, onWhatsApp }) {
+function RankedRow({ rec }) {
   const priorityColor = PRIORITY_COLORS[rec.priority_action] || 'var(--color-neutral-400)';
   const stageColor    = STAGE_COLORS[rec.warning_stage] || 'var(--color-neutral-400)';
 
@@ -293,13 +186,6 @@ function RankedRow({ rec, onWhatsApp }) {
       <div className="ss-ranked-action" style={{ color: priorityColor }}>
         {rec.priority_action}
       </div>
-      <button
-        className="ss-ranked-wa-btn"
-        onClick={() => onWhatsApp(rec)}
-        title="Send this recommendation to WhatsApp"
-      >
-        WA
-      </button>
     </div>
   );
 }
@@ -351,13 +237,11 @@ export default function SmartSellPanel({ recommendations, loading }) {
             <span>DISC.</span>
             <span>SCORE</span>
             <span>ACTION</span>
-            <span>WA</span>
           </div>
           {allRecs.map(rec => (
             <RankedRow
               key={rec.batch_id}
               rec={rec}
-              onWhatsApp={(r) => openWhatsApp(r, allRecs)}
             />
           ))}
         </div>

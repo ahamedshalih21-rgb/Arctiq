@@ -9,6 +9,7 @@ import FaultControl from './components/FaultControl';
 import CompressorHealth from './components/CompressorHealth';
 import RecoveryExchange from './components/RecoveryExchange';
 import SmartSellPanel from './components/SmartSellPanel';
+import RateSettingsModal from './components/RateSettingsModal';
 
 const API_BASE = 'http://localhost:8000';
 const POLL_INTERVAL_MS = 4000;
@@ -246,6 +247,17 @@ function InventoryBatchCard({ pt, predictions, readings, ssRec, isActive, onSele
 /* ─── App ───────────────────────────────────────────────────────────────────── */
 export default function App() {
   const [activeProduce, setActiveProduce] = useState('spinach');
+  const [electricityRate, setElectricityRate] = useState(() => {
+    const saved = localStorage.getItem('electricityRate');
+    return saved ? Number(saved) : 8.0;
+  });
+  const [isRateModalOpen, setIsRateModalOpen] = useState(false);
+
+  const handleSaveRate = (newRate) => {
+    setElectricityRate(newRate);
+    localStorage.setItem('electricityRate', String(newRate));
+  };
+
   const { readings, predictions, history, lastUpdated, error, connected, fetchAll } = useArctiq();
   const { compressor, fetchCompressor } = useCompressor();
   const { energyData, fetchEnergy } = useEnergy();
@@ -338,6 +350,8 @@ export default function App() {
             <EnergyPanel
               energyData={energyData}
               compressorData={compressor}
+              electricityRate={electricityRate}
+              onOpenRateSettings={() => setIsRateModalOpen(true)}
             />
 
             {/* Chamber Telemetry Tiles */}
@@ -394,9 +408,12 @@ export default function App() {
             />
           </section>
 
-          {/* ── 2. SECONDARY SECTION (Right, Medium, grid-column: 3 / 4): Spoilage Risk & Produce Status ── */}
-          <aside className="spoilage-section" aria-label="Spoilage Risk & Produce Status">
-            {/* Unified Cold Storage Inventory / Produce Batches */}
+          {/* ── 2. RIGHT COLUMN: Compressor Health (TOP) + Spoilage Risk & Produce Status (BELOW) ── */}
+          <aside className="right-section" aria-label="Compressor & Spoilage Intelligence">
+            {/* Top of Right Column: Compressor Health Score & Degradation Analytics */}
+            <CompressorHealth data={compressor} />
+
+            {/* Below Compressor Health: Produce Batches & Shelf Life */}
             <div className="hmi-card">
               <div className="hmi-section-title">Produce Batches & Shelf Life</div>
               <div className="inv-list">
@@ -439,11 +456,6 @@ export default function App() {
             />
           </aside>
 
-          {/* ── 3. BOTTOM SECTION (Full Width, grid-column: 1 / -1): Compressor Health Score ── */}
-          <section className="compressor-section" aria-label="Compressor Health Analytics">
-            <CompressorHealth data={compressor} />
-          </section>
-
         </main>
       )}
 
@@ -463,6 +475,14 @@ export default function App() {
         </div>
         <div>Arctiq · Technova 2026 · Simulation</div>
       </footer>
+
+      {/* Electricity Rate Tariff Modal */}
+      <RateSettingsModal
+        isOpen={isRateModalOpen}
+        onClose={() => setIsRateModalOpen(false)}
+        currentRate={electricityRate}
+        onSaveRate={handleSaveRate}
+      />
 
     </div>
   );

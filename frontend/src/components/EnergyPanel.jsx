@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
-  AreaChart, Area, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, ReferenceLine, Legend
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 
 /**
@@ -9,17 +9,17 @@ import {
  * -----------------------------------------
  * Displays real-time cold-storage energy consumption, baseline comparison,
  * compressor duty cycle, financial savings in INR, and a 24-hour power trend.
+ * Clean industrial typography — ZERO emojis.
  */
 
 const BASELINE_KW = 2.5;
-const RATE_INR = 8.0;
 
-const CustomEnergyTooltip = ({ active, payload, label }) => {
+const CustomEnergyTooltip = ({ active, payload, label, electricityRate }) => {
   if (!active || !payload?.length) return null;
   const actual = payload.find(p => p.dataKey === 'actual_kw')?.value ?? 0;
   const baseline = payload.find(p => p.dataKey === 'baseline_kw')?.value ?? BASELINE_KW;
   const saved = Math.max(0, baseline - actual);
-  const costSaved = (saved * RATE_INR).toFixed(2);
+  const costSaved = (saved * electricityRate).toFixed(2);
 
   return (
     <div className="energy-chart-tooltip">
@@ -45,10 +45,9 @@ const CustomEnergyTooltip = ({ active, payload, label }) => {
   );
 };
 
-export default function EnergyPanel({ energyData, compressorData }) {
+export default function EnergyPanel({ energyData, compressorData, electricityRate = 8.0, onOpenRateSettings }) {
   const [chartMode, setChartMode] = useState('power'); // 'power' | 'savings'
 
-  // Fallback calculations if backend /api/power is still syncing or offline
   const comp = compressorData || {};
   const dutyCyclePct = energyData?.duty_cycle_pct ?? (comp.duty_cycle != null ? Number(comp.duty_cycle) : 55.0);
   const isRunning = energyData?.compressor_is_running ?? (comp.compressor_current > 1.0);
@@ -71,20 +70,20 @@ export default function EnergyPanel({ energyData, compressorData }) {
     Math.max(0, ((baselineKw - effectiveKw) / baselineKw) * 100).toFixed(1)
   );
 
-  // Cost saved in INR
+  // Dynamic Cost calculations based on customizable electricity rate (₹/kWh)
   const dailyKwhSaved = energyData?.daily_kwh_saved ?? Number(
     Math.max(0, (baselineKw - effectiveKw) * 24).toFixed(1)
   );
-  const dailyCostSavedInr = energyData?.daily_cost_saved_inr ?? Number(
-    (dailyKwhSaved * RATE_INR).toFixed(2)
-  );
-  const monthlyCostSavedInr = energyData?.monthly_cost_saved_inr ?? Number(
-    (dailyCostSavedInr * 30).toFixed(2)
-  );
+  const dailyCostSavedInr = Number((dailyKwhSaved * electricityRate).toFixed(2));
+  const monthlyCostSavedInr = Number((dailyCostSavedInr * 30).toFixed(2));
+  const annualCostSavedInr = Number((dailyCostSavedInr * 365).toFixed(2));
 
   // 24h Trend Data
   const trendData = energyData?.trend_24h && energyData.trend_24h.length > 0
-    ? energyData.trend_24h
+    ? energyData.trend_24h.map(t => ({
+        ...t,
+        saved_cost_inr: Number((t.saved_kw * electricityRate).toFixed(2)),
+      }))
     : Array.from({ length: 24 }, (_, i) => {
         const hour = `${String(i).padStart(2, '0')}:00`;
         const diurnal = 1.0 + 0.12 * Math.sin((i - 8) * Math.PI / 12);
@@ -96,7 +95,7 @@ export default function EnergyPanel({ energyData, compressorData }) {
           baseline_kw: bKw,
           actual_kw: aKw,
           saved_kw: sKw,
-          saved_cost_inr: Number((sKw * RATE_INR).toFixed(2)),
+          saved_cost_inr: Number((sKw * electricityRate).toFixed(2)),
         };
       });
 
@@ -106,7 +105,11 @@ export default function EnergyPanel({ energyData, compressorData }) {
       <div className="energy-header">
         <div className="energy-header-left">
           <div className="energy-title-group">
-            <span className="energy-badge-icon">⚡</span>
+            <span className="energy-badge-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </span>
             <div>
               <h2 className="energy-title">Energy Consumption & Optimization</h2>
               <div className="energy-subtitle">
@@ -121,9 +124,18 @@ export default function EnergyPanel({ energyData, compressorData }) {
             <span className="energy-pulse-dot" />
             AI Inverter Modulation: Active
           </div>
-          <div className="tariff-pill">
-            Tariff: ₹{RATE_INR.toFixed(2)}/kWh
-          </div>
+          <button
+            type="button"
+            className="tariff-pill clickable"
+            onClick={onOpenRateSettings}
+            title="Click to customize electricity rate"
+          >
+            Tariff: ₹{Number(electricityRate).toFixed(1)}/kWh
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 4 }}>
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -201,27 +213,54 @@ export default function EnergyPanel({ energyData, compressorData }) {
           </div>
         </div>
 
-        {/* KPI 4: Cost Saved (INR) */}
+        {/* KPI 4: Cost Saved (Customizable INR Rate) */}
         <div className="energy-kpi-card highlight-amber">
           <div className="ekpi-top">
             <span className="ekpi-label">COST SAVED TODAY</span>
-            <span className="ekpi-pill rupee">₹ SAVINGS</span>
+            <button
+              type="button"
+              className="ekpi-settings-btn"
+              onClick={onOpenRateSettings}
+              title="Configure State Electricity Rate (₹/kWh)"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              <span>RATE</span>
+            </button>
           </div>
+
           <div className="ekpi-value-row">
             <span className="ekpi-symbol text-amber">₹</span>
             <span className="ekpi-value text-amber">{Math.round(dailyCostSavedInr)}</span>
           </div>
-          <div className="ekpi-comparison">
-            <span className="ekpi-vs">Projected: </span>
-            <span className="ekpi-sub-highlight text-amber">
+
+          {/* Required Rate Disclosure Line */}
+          <div className="ekpi-rate-line" title="Configurable via Settings">
+            Energy Saved: {dailyKwhSaved.toFixed(1)} kWh @ ₹{Number(electricityRate).toFixed(1)}/kWh ({electricityRate === 8.0 ? 'default India rate' : 'custom state rate'})
+          </div>
+
+          <div className="ekpi-comparison" style={{ marginTop: 4 }}>
+            <span className="ekpi-vs">Monthly: </span>
+            <span className="ekpi-sub-highlight text-amber" style={{ marginRight: 6 }}>
               ₹{Math.round(monthlyCostSavedInr).toLocaleString('en-IN')}/mo
             </span>
+            <span className="ekpi-vs">12-Mo: </span>
+            <span className="ekpi-sub-highlight text-amber">
+              ₹{Math.round(annualCostSavedInr).toLocaleString('en-IN')}
+            </span>
           </div>
+
           <div className="ekpi-bar-track">
             <div
               className="ekpi-bar-fill amber"
-              style={{ width: `${Math.min(100, (dailyCostSavedInr / 300) * 100)}%` }}
+              style={{ width: `${Math.min(100, (dailyCostSavedInr / (35 * electricityRate)) * 100)}%` }}
             />
+          </div>
+
+          <div className="ekpi-rate-disclaimer">
+            Rates vary by state and tariff. Update for accurate savings estimate.
           </div>
         </div>
       </div>
@@ -248,7 +287,7 @@ export default function EnergyPanel({ energyData, compressorData }) {
               className={`cmt-btn ${chartMode === 'savings' ? 'active' : ''}`}
               onClick={() => setChartMode('savings')}
             >
-              Hourly Savings (₹)
+              Hourly Savings (₹ @ ₹{Number(electricityRate).toFixed(1)}/kWh)
             </button>
           </div>
         </div>
@@ -282,7 +321,7 @@ export default function EnergyPanel({ energyData, compressorData }) {
                   tickLine={false}
                   unit=" kW"
                 />
-                <Tooltip content={<CustomEnergyTooltip />} />
+                <Tooltip content={<CustomEnergyTooltip electricityRate={electricityRate} />} />
                 <ReferenceLine
                   y={BASELINE_KW}
                   stroke="#F87171"
@@ -334,7 +373,7 @@ export default function EnergyPanel({ energyData, compressorData }) {
                   tickLine={false}
                   unit=" ₹"
                 />
-                <Tooltip content={<CustomEnergyTooltip />} />
+                <Tooltip content={<CustomEnergyTooltip electricityRate={electricityRate} />} />
                 <Area
                   type="monotone"
                   dataKey="saved_cost_inr"
