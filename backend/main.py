@@ -345,16 +345,17 @@ async def trigger_fault(body: FaultTriggerRequest):
             raise HTTPException(status_code=404, detail="Produce type not found in simulator.")
             
         # Explicitly force a Telegram alert for the triggered fault
-        pred = build_prediction_for(body.produce_type)
+        pt_canonical = canonical_produce(body.produce_type)
+        pred = build_prediction_for(pt_canonical)
         if pred:
             meta_all = simulator.get_metadata()
-            meta = meta_all.get(body.produce_type, {})
+            meta = meta_all.get(pt_canonical, {})  # use canonical key
             rec = generate_smartsell_recommendation(
-                produce_type=body.produce_type,
-                display_name=meta.get("display_name", body.produce_type),
-                batch_id=meta.get("batch_id", body.produce_type),
+                produce_type=pt_canonical,
+                display_name=meta.get("display_name", pt_canonical),
+                batch_id=meta.get("batch_id", pt_canonical),
                 model_hours=pred.get("model_hours_remaining", pred.get("hours_remaining", 99.0)),
-                warning_stage=pred.get("warning_stage", "HIGH_RISK"), # Force a higher stage text
+                warning_stage=pred.get("warning_stage", "HIGH_RISK"),
                 projected_horizon=pred.get("projected_risk_horizon_hours", 99.0),
                 quantity_kg=meta.get("quantity_kg", meta.get("batch_weight_kg", 100.0)),
                 purchase_cost_per_kg=meta.get("purchase_cost_per_kg", 30.0),
@@ -362,8 +363,8 @@ async def trigger_fault(body: FaultTriggerRequest):
                 demand_score=meta.get("demand_score", 60.0),
             )
             asyncio.create_task(notification_service.evaluate_and_notify(
-                batch_id=meta.get("batch_id", body.produce_type),
-                current_stage="HIGH_RISK", # Fake the stage just for the forced alert so it bypasses SAFE filter
+                batch_id=meta.get("batch_id", pt_canonical),
+                current_stage="HIGH_RISK",
                 recommendation=rec,
                 force_alert=True
             ))
@@ -376,7 +377,32 @@ async def trigger_fault(body: FaultTriggerRequest):
         }
     else:
         simulator.trigger_all_faults(speed)
-        # We could also loop and notify here, but background loop will catch it.
+        # Force Telegram alerts for ALL batches immediately (background loop uses force_alert=False
+        # so it won't send if the state hasn't escalated — we must explicitly force here).
+        meta_all = simulator.get_metadata()
+        for pt in VALID_PRODUCE:
+            pred = build_prediction_for(pt)
+            if not pred:
+                continue
+            meta = meta_all.get(pt, {})
+            rec = generate_smartsell_recommendation(
+                produce_type=pt,
+                display_name=meta.get("display_name", pt),
+                batch_id=meta.get("batch_id", pt),
+                model_hours=pred.get("model_hours_remaining", pred.get("hours_remaining", 99.0)),
+                warning_stage=pred.get("warning_stage", "HIGH_RISK"),
+                projected_horizon=pred.get("projected_risk_horizon_hours", 99.0),
+                quantity_kg=meta.get("quantity_kg", meta.get("batch_weight_kg", 100.0)),
+                purchase_cost_per_kg=meta.get("purchase_cost_per_kg", 30.0),
+                market_price_per_kg=meta.get("market_price_per_kg", 60.0),
+                demand_score=meta.get("demand_score", 60.0),
+            )
+            asyncio.create_task(notification_service.evaluate_and_notify(
+                batch_id=meta.get("batch_id", pt),
+                current_stage="HIGH_RISK",
+                recommendation=rec,
+                force_alert=True
+            ))
         return {
             "status":       "fault_triggered",
             "produce_type": "all",
