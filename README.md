@@ -1,5 +1,5 @@
 # Arctiq
-**AI-powered cold-storage monitoring and recovery exchange dashboard** — Technova 2026 Hackathon Demo
+**AI-powered cold-storage monitoring and recovery exchange dashboard** 
 
 ---
 
